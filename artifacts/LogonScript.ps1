@@ -27,11 +27,11 @@ if ($env:kubernetesDistribution -eq "k8s") {
 }
 
 Write-Host "Fetching the latest AKS Edge Essentials release."
-$latestReleaseTag = (Invoke-WebRequest $aksEEReleasesUrl | ConvertFrom-Json)[0].tag_name
+$latestReleaseTag = (Invoke-WebRequest $aksEEReleasesUrl -UseBasicParsing | ConvertFrom-Json)[0].tag_name
 
 $AKSEEReleaseDownloadUrl = "https://github.com/Azure/AKS-Edge/archive/refs/tags/$latestReleaseTag.zip"
 $output = Join-Path "C:\temp" "$latestReleaseTag.zip"
-Invoke-WebRequest $AKSEEReleaseDownloadUrl -OutFile $output
+Invoke-WebRequest $AKSEEReleaseDownloadUrl -OutFile $output -UseBasicParsing
 Expand-Archive $output -DestinationPath "C:\temp" -Force
 $AKSEEReleaseConfigFilePath = "C:\temp\AKS-Edge-$latestReleaseTag\tools\aksedge-config.json"
 $jsonContent = Get-Content -Raw -Path $AKSEEReleaseConfigFilePath | ConvertFrom-Json
@@ -138,7 +138,7 @@ Write-Host "About to silently install AKS Edge Essentials, this will take a few 
 Write-Host "`n"
 
 try {
-    function download2() { $ProgressPreference = "SilentlyContinue"; Invoke-WebRequest -Uri $url -OutFile $installDir\$zipFile }
+    function download2() { $ProgressPreference = "SilentlyContinue"; Invoke-WebRequest -UseBasicParsing -Uri $url -OutFile $installDir\$zipFile }
     download2
 }
 catch {
@@ -322,7 +322,7 @@ Write-Host "`n"
 Write-Host "Onboarding the Azure VM to Azure Arc..."
 
 # Download the package
-function download1() { $ProgressPreference = "SilentlyContinue"; Invoke-WebRequest -Uri https://aka.ms/AzureConnectedMachineAgent -OutFile AzureConnectedMachineAgent.msi }
+function download1() { $ProgressPreference = "SilentlyContinue"; Invoke-WebRequest -UseBasicParsing -Uri https://aka.ms/AzureConnectedMachineAgent -OutFile AzureConnectedMachineAgent.msi }
 download1
 
 # Install the package
