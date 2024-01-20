@@ -40,6 +40,9 @@
     },
     "bastionHostName": {
       "value": "Arc-Win-Demo-Bastion"
+    },
+    "githubAccount": {
+      "value": "prashantchari"
     }
   }
 }
