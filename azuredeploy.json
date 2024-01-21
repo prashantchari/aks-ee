@@ -373,7 +373,7 @@
                     ],
                     "commandToExecute": "[concat('powershell.exe -ExecutionPolicy Unrestricted -File LogonScript.ps1')]"
                 }
-            },
+            }
         },
         {
             "type": "Microsoft.Network/bastionHosts",
