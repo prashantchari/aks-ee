@@ -350,6 +350,32 @@
             ]
         },
         {
+            "type": "Microsoft.Compute/virtualMachines/extensions",
+            "name": "[concat(variables('vmName'),'/Logon')]",
+            "apiVersion": "2022-11-01",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[concat('Microsoft.Compute/virtualMachines/', variables('vmName'))]",
+                "[resourceId('Microsoft.Compute/virtualMachines/extensions', parameters('vmName'), 'Bootstrap')]",
+                "[resourceId('Microsoft.Compute/virtualMachines/extensions', parameters('vmName'), 'InstallWindowsFeatures')]"
+            ],
+            "tags": {
+                "displayName": "Run Logon"
+            },
+            "properties": {
+                "publisher": "Microsoft.Compute",
+                "type": "CustomScriptExtension",
+                "typeHandlerVersion": "1.10",
+                "autoUpgradeMinorVersion": true,
+                "protectedSettings": {
+                    "fileUris": [
+                        "[uri(variables('templateBaseUrl'), concat('artifacts/LogonScript.ps1'))]"
+                    ],
+                    "commandToExecute": "[concat('powershell.exe -ExecutionPolicy Unrestricted -File LogonScript.ps1')]"
+                }
+            },
+        },
+        {
             "type": "Microsoft.Network/bastionHosts",
             "condition": "[parameters('deployBastion')]",
             "name": "[variables('bastionName')]",
