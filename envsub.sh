@@ -4,11 +4,10 @@ set -o allexport
 source .env
 set +o allexport
 
-files=(azuredeploy.parameters.json)
 
-for file in files; do
-    echo "Replacing env variables in "
-    envsubst <"" >".tmp"
+for file in *.parameters.json; do
+    echo "Replacing env variables in $file"
+    envsubst <"$file" >"$file.tmp"
     # move the temporary file to the original file
-    mv ".tmp" ""
+    mv "$file.tmp" "$file"
 done
