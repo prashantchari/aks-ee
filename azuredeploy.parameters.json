@@ -30,7 +30,7 @@
     "value": "${SUBSCRIPTION_ID}"
   },
   "location": {
-    "value": "${LOCATION}"
+    "value": "${REGION}"
   },
   "githubAccount": {
     "value": "${GITHUB_ACCOUNT}"
