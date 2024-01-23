@@ -3,46 +3,40 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "vmSize": {
-      "value": "Standard_D8s_v3"
+      "value": "Standard_D8_v3"
     },
     "vmName": {
-      "value": "AKS-EE-Win-Demo"
+      "value": "AKS-EE-Win"
     },
     "kubernetesDistribution": {
-      "value": "k3s"
+      "value": "${K8S_DISTRO}"
     },
     "windowsNode": {
       "value": false
     },
     "adminUsername": {
-      "value": "arcdemo"
+      "value": "${ADMIN_USERNAME}"
     },
     "adminPassword": {
-      "value": "ArcPassword123!!"
+      "value": "${ADMIN_PASSWORD}"
     },
     "appId": {
-      "value": "XXXXX-XXXXX-XXXXX"
+      "value": "${APPLICATION_ID}"
     },
     "password": {
-      "value": "XXXXX-XXXXX-XXXXX"
+      "value": "${APPLICATION_PASSWORD}"
     },
     "tenantId": {
-      "value": "XXXXX-XXXXX-XXXXX"
+      "value": "${TENANT_ID}"
     },
     "subscriptionId": {
-      "value": "XXXXX-XXXXX-XXXXX"
+      "value": "${SUBSCRIPTION_ID}"
     },
     "location": {
-      "value": "eastus"
-    },
-    "deployBastion": {
-      "value": false
-    },
-    "bastionHostName": {
-      "value": "Arc-Win-Demo-Bastion"
+      "value": "${LOCATION}"
     },
     "githubAccount": {
-      "value": "prashantchari"
+      "value": "${GITHUB_ACCOUNT}"
     }
   }
 }

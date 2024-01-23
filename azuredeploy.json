@@ -36,7 +36,7 @@
         },
         "windowsOSVersion": {
             "type": "string",
-            "defaultValue": "2022-datacenter-g2",
+            "defaultValue": "2022-datacenter",
             "metadata": {
                 "description": "The Windows version for the VM. This will pick a fully patched image of this given Windows version."
             }
@@ -151,7 +151,7 @@
         "bastionSubnetName": "AzureBastionSubnet",
         "subnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetworkName'), parameters('subnetName'))]",
         "bastionSubnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetworkName'), variables('bastionSubnetName'))]",
-        "osDiskType": "Premium_LRS",
+        "osDiskType": "Standard_LRS",
         "subnetAddressPrefix": "10.1.0.0/24",
         "addressPrefix": "10.1.0.0/16",
         "bastionName": "[concat(parameters('bastionHostName'))]",
@@ -163,7 +163,7 @@
     "resources": [
         {
             "type": "Microsoft.Network/networkInterfaces",
-            "apiVersion": "2022-07-01",
+            "apiVersion": "2021-01-01",
             "name": "[variables('networkInterfaceName')]",
             "location": "[parameters('location')]",
             "dependsOn": [
@@ -214,7 +214,7 @@
         },
         {
             "type": "Microsoft.Network/virtualNetworks",
-            "apiVersion": "2022-07-01",
+            "apiVersion": "2021-01-01",
             "name": "[variables('virtualNetworkName')]",
             "location": "[parameters('location')]",
             "properties": {
@@ -243,7 +243,7 @@
         },
         {
             "type": "Microsoft.Network/publicIpAddresses",
-            "apiVersion": "2022-07-01",
+            "apiVersion": "2021-01-01",
             "name": "[variables('publicIpAddressName')]",
             "location": "[parameters('location')]",
             "properties": {
@@ -257,7 +257,7 @@
         },
         {
             "type": "Microsoft.Compute/virtualMachines",
-            "apiVersion": "2022-11-01",
+            "apiVersion": "2021-11-01",
             "name": "[variables('vmName')]",
             "location": "[parameters('location')]",
             "tags": "[parameters('resourceTags')]",
@@ -305,7 +305,7 @@
         {
             "type": "Microsoft.Compute/virtualMachines/extensions",
             "name": "[concat(variables('vmName'),'/Bootstrap')]",
-            "apiVersion": "2022-11-01",
+            "apiVersion": "2021-11-01",
             "location": "[parameters('location')]",
             "dependsOn": [
                 "[concat('Microsoft.Compute/virtualMachines/', variables('vmName'))]"
@@ -328,7 +328,7 @@
         },
         {
             "type": "Microsoft.Compute/virtualMachines/extensions",
-            "apiVersion": "2022-11-01",
+            "apiVersion": "2021-11-01",
             "name": "[concat(variables('vmName'),'/InstallWindowsFeatures')]",
             "location": "[parameters('location')]",
             "properties": {
@@ -348,32 +348,6 @@
             "dependsOn": [
                 "[resourceId('Microsoft.Compute/virtualMachines/extensions', parameters('vmName'), 'Bootstrap')]"
             ]
-        },
-        {
-            "type": "Microsoft.Network/bastionHosts",
-            "condition": "[parameters('deployBastion')]",
-            "name": "[variables('bastionName')]",
-            "location": "[parameters('location')]",
-            "apiVersion": "2022-07-01",
-            "dependsOn": [
-                "[resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetworkName'))]",
-                "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIpAddressName'))]"
-            ],
-            "properties": {
-                "ipConfigurations": [
-                    {
-                        "name": "IpConf",
-                        "properties": {
-                            "subnet": {
-                                "id": "[variables('bastionSubnetRef')]"
-                            },
-                            "publicIPAddress": {
-                                "id": "[resourceId('Microsoft.Network/publicIPAddresses',variables('publicIPAddressName'))]"
-                            }
-                        }
-                    }
-                ]
-            }
         }
     ],
     "outputs": {
