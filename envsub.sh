@@ -1,5 +1,9 @@
 #!/bin/bash
 
+set -o allexport
+source .env
+set +o allexport
+
 files=(azuredeploy.parameters.json)
 
 for file in files; do

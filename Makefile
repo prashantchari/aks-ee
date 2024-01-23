@@ -1,5 +1,3 @@
-source .env
-
 params:
 	bash envsub.sh
 

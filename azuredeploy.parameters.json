@@ -1,42 +1,38 @@
 {
-  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
-  "contentVersion": "1.0.0.0",
-  "parameters": {
-    "vmSize": {
-      "value": "Standard_D8_v3"
-    },
-    "vmName": {
-      "value": "AKS-EE-Win"
-    },
-    "kubernetesDistribution": {
-      "value": "${K8S_DISTRO}"
-    },
-    "windowsNode": {
-      "value": false
-    },
-    "adminUsername": {
-      "value": "${ADMIN_USERNAME}"
-    },
-    "adminPassword": {
-      "value": "${ADMIN_PASSWORD}"
-    },
-    "appId": {
-      "value": "${APPLICATION_ID}"
-    },
-    "password": {
-      "value": "${APPLICATION_PASSWORD}"
-    },
-    "tenantId": {
-      "value": "${TENANT_ID}"
-    },
-    "subscriptionId": {
-      "value": "${SUBSCRIPTION_ID}"
-    },
-    "location": {
-      "value": "${LOCATION}"
-    },
-    "githubAccount": {
-      "value": "${GITHUB_ACCOUNT}"
-    }
+  "vmSize": {
+    "value": "Standard_D8_v3"
+  },
+  "vmName": {
+    "value": "AKS-EE-Win"
+  },
+  "kubernetesDistribution": {
+    "value": "${K8S_DISTRO}"
+  },
+  "windowsNode": {
+    "value": false
+  },
+  "adminUsername": {
+    "value": "${ADMIN_USERNAME}"
+  },
+  "adminPassword": {
+    "value": "${ADMIN_PASSWORD}"
+  },
+  "appId": {
+    "value": "${APPLICATION_ID}"
+  },
+  "password": {
+    "value": "${APPLICATION_PASSWORD}"
+  },
+  "tenantId": {
+    "value": "${TENANT_ID}"
+  },
+  "subscriptionId": {
+    "value": "${SUBSCRIPTION_ID}"
+  },
+  "location": {
+    "value": "${LOCATION}"
+  },
+  "githubAccount": {
+    "value": "${GITHUB_ACCOUNT}"
   }
 }
