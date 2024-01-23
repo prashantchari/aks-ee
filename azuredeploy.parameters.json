@@ -3,7 +3,7 @@
     "value": "Standard_D8_v3"
   },
   "vmName": {
-    "value": "AKS-EE-Win"
+    "value": "${VM_NAME}"
   },
   "kubernetesDistribution": {
     "value": "${K8S_DISTRO}"
