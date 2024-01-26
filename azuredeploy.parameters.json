@@ -34,8 +34,5 @@
   },
   "githubAccount": {
     "value": "${GITHUB_ACCOUNT}"
-  },
-  "deployBastion": {
-    "value": false
   }
 }

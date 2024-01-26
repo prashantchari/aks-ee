@@ -29,7 +29,6 @@
         },
         "adminPassword": {
             "type": "securestring",
-            "defaultValue": "ArcPassword123!!",
             "metadata": {
                 "description": "Windows password for the Virtual Machine"
             }
@@ -46,19 +45,6 @@
             "defaultValue": "[resourceGroup().location]",
             "metadata": {
                 "description": "Location for all resources."
-            }
-        },
-        "deployBastion": {
-            "type": "bool",
-            "metadata": {
-                "description": "Choice to deploy Bastion to connect to the client VM"
-            }
-        },
-        "bastionHostName": {
-            "type": "string",
-            "defaultValue": "AKS-EE-Demo-Bastion",
-            "metadata": {
-                "description": "the Azure Bastion host name"
             }
         },
         "vmSize": {
@@ -148,15 +134,11 @@
         "networkInterfaceName": "[concat(parameters('vmName'),'-NIC')]",
         "networkSecurityGroupName": "[concat(parameters('vmName'), '-NSG')]",
         "virtualNetworkName": "[concat(parameters('vmName'), '-VNET')]",
-        "bastionSubnetName": "AzureBastionSubnet",
         "subnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetworkName'), parameters('subnetName'))]",
-        "bastionSubnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetworkName'), variables('bastionSubnetName'))]",
         "osDiskType": "Standard_LRS",
         "subnetAddressPrefix": "10.1.0.0/24",
         "addressPrefix": "10.1.0.0/16",
-        "bastionName": "[concat(parameters('bastionHostName'))]",
-        "bastionSubnetIpPrefix": "10.1.1.64/26",
-        "PublicIPNoBastion": {
+        "publicIPResource": {
             "id": "[resourceId('Microsoft.Network/publicIPAddresses',variables('publicIPAddressName'))]"
         }
     },
@@ -178,7 +160,7 @@
                                 "id": "[variables('subnetRef')]"
                             },
                             "privateIPAllocationMethod": "Dynamic",
-                            "publicIPAddress": "[if(not(parameters('deployBastion')),variables('PublicIPNoBastion'),json('null'))]"
+                            "publicIPAddress": "[variables('publicIPResource')]"
                         }
                     }
                 ],
@@ -192,25 +174,6 @@
             "apiVersion": "2019-02-01",
             "name": "[variables('networkSecurityGroupName')]",
             "location": "[parameters('location')]"
-        },
-        {
-            "type": "Microsoft.Network/networkSecurityGroups/securityRules",
-            "apiVersion": "2022-05-01",
-            "condition": "[parameters('deployBastion')]",
-            "dependsOn": [
-                "[resourceId('Microsoft.Network/networkSecurityGroups/', variables('networkSecurityGroupName'))]"
-            ],
-            "name": "[concat(variables('networkSecurityGroupName'),'/allow_RDP_3389')]",
-            "properties": {
-                "priority": 1001,
-                "protocol": "TCP",
-                "access": "Allow",
-                "direction": "Inbound",
-                "sourceAddressPrefix": "[variables('bastionSubnetIpPrefix')]",
-                "sourcePortRange": "*",
-                "destinationAddressPrefix": "*",
-                "destinationPortRange": "3389"
-            }
         },
         {
             "type": "Microsoft.Network/virtualNetworks",
@@ -231,12 +194,6 @@
                             "privateEndpointNetworkPolicies": "Enabled",
                             "privateLinkServiceNetworkPolicies": "Enabled"
                         }
-                    },
-                    {
-                        "name": "AzureBastionSubnet",
-                        "properties": {
-                            "addressPrefix": "[variables('bastionSubnetIpPrefix')]"
-                        }
                     }
                 ]
             }
@@ -252,7 +209,7 @@
                 "idleTimeoutInMinutes": 4
             },
             "sku": {
-                "name": "[if(not(parameters('deployBastion')),'Basic','Standard')]"
+                "name": "Basic"
             }
         },
         {
