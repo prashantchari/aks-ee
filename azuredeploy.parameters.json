@@ -21,7 +21,7 @@
     "value": "${APPLICATION_ID}"
   },
   "password": {
-    "value": "${APPLICATION_PASSWORD}"
+    "value": "${APPLICATION_SECRET}"
   },
   "tenantId": {
     "value": "${TENANT_ID}"
