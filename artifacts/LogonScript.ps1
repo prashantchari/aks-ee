@@ -96,7 +96,7 @@ if ($env:windowsNode -eq $true) {
     "Version": "$versionAksEdgeConfig",
     "DeploymentType": "SingleMachineCluster",
     "Init": {
-        "ServiceIPRangeSize": 0
+        "ServiceIPRangeSize": 10
     },
     "Network": {
         "NetworkPlugin": "$networkplugin",
@@ -193,9 +193,6 @@ Write-Host "Checking kubernetes nodes"
 Write-Host "`n"
 kubectl get nodes -o wide
 Write-Host "`n"
-
-# copy kubeconfig to the user home folder (from the system account home location)
-Copy-Item C:\Windows\System32\Config\systemprofile\.kube C:\Users\$Env:adminUsername\ -Recurse
 
 # az version
 az -v
