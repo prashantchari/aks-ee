@@ -77,8 +77,8 @@ if ($env:windowsNode -eq $true) {
     "Machines": [
         {
             "LinuxNode": {
-                "CpuCount": 4,
-                "MemoryInMB": 4096,
+                "CpuCount": 8,
+                "MemoryInMB": 16384,
                 "DataSizeInGB": 20
             },
             "WindowsNode": {
