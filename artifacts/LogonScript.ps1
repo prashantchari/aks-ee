@@ -277,20 +277,20 @@ Write-Host "Create Azure Monitor for containers Kubernetes extension instance"
 Write-Host "`n"
 
 # Deploying Azure log-analytics workspace
-$workspaceName = ($Env:arcClusterName).ToLower()
-$workspaceResourceId = az monitor log-analytics workspace create `
-    --resource-group $Env:resourceGroup `
-    --workspace-name "$workspaceName-law" `
-    --query id -o tsv
+# $workspaceName = ($Env:arcClusterName).ToLower()
+# $workspaceResourceId = az monitor log-analytics workspace create `
+#     --resource-group $Env:resourceGroup `
+#     --workspace-name "$workspaceName-law" `
+#     --query id -o tsv
 
-# Deploying Azure Monitor for containers Kubernetes extension instance
-Write-Host "`n"
-az k8s-extension create --name "azuremonitor-containers" `
-    --cluster-name $Env:arcClusterName `
-    --resource-group $Env:resourceGroup `
-    --cluster-type connectedClusters `
-    --extension-type Microsoft.AzureMonitor.Containers `
-    --configuration-settings logAnalyticsWorkspaceResourceID=$workspaceResourceId
+# # Deploying Azure Monitor for containers Kubernetes extension instance
+# Write-Host "`n"
+# az k8s-extension create --name "azuremonitor-containers" `
+#     --cluster-name $Env:arcClusterName `
+#     --resource-group $Env:resourceGroup `
+#     --cluster-type connectedClusters `
+#     --extension-type Microsoft.AzureMonitor.Containers `
+#     --configuration-settings logAnalyticsWorkspaceResourceID=$workspaceResourceId
 
 # # Deploying Azure Defender Kubernetes extension instance
 # Write-Host "`n"
@@ -314,36 +314,36 @@ az k8s-extension create --name "azuremonitor-containers" `
 
 ## Arc - enabled Server
 ## Configure the OS to allow Azure Arc Agent to be deploy on an Azure VM
-Write-Host "`n"
-Write-Host "Configure the OS to allow Azure Arc Agent to be deploy on an Azure VM"
-Set-Service WindowsAzureGuestAgent -StartupType Disabled -Verbose
-Stop-Service WindowsAzureGuestAgent -Force -Verbose
-New-NetFirewallRule -Name BlockAzureIMDS -DisplayName "Block access to Azure IMDS" -Enabled True -Profile Any -Direction Outbound -Action Block -RemoteAddress 169.254.169.254
+# Write-Host "`n"
+# Write-Host "Configure the OS to allow Azure Arc Agent to be deploy on an Azure VM"
+# Set-Service WindowsAzureGuestAgent -StartupType Disabled -Verbose
+# Stop-Service WindowsAzureGuestAgent -Force -Verbose
+# New-NetFirewallRule -Name BlockAzureIMDS -DisplayName "Block access to Azure IMDS" -Enabled True -Profile Any -Direction Outbound -Action Block -RemoteAddress 169.254.169.254
 
-## Azure Arc agent Installation
-Write-Host "`n"
-Write-Host "Onboarding the Azure VM to Azure Arc..."
+# ## Azure Arc agent Installation
+# Write-Host "`n"
+# Write-Host "Onboarding the Azure VM to Azure Arc..."
 
-# Download the package
-function download1() { $ProgressPreference = "SilentlyContinue"; Invoke-WebRequest -UseBasicParsing -Uri https://aka.ms/AzureConnectedMachineAgent -OutFile AzureConnectedMachineAgent.msi }
-download1
+# # Download the package
+# function download1() { $ProgressPreference = "SilentlyContinue"; Invoke-WebRequest -UseBasicParsing -Uri https://aka.ms/AzureConnectedMachineAgent -OutFile AzureConnectedMachineAgent.msi }
+# download1
 
-# Install the package
-msiexec /i AzureConnectedMachineAgent.msi /l*v installationlog.txt /qn | Out-String
+# # Install the package
+# msiexec /i AzureConnectedMachineAgent.msi /l*v installationlog.txt /qn | Out-String
 
-#Tag
-$clusterName = "$env:computername-$env:kubernetesDistribution"
+# #Tag
+# $clusterName = "$env:computername-$env:kubernetesDistribution"
 
-# Run connect command
-& "$env:ProgramFiles\AzureConnectedMachineAgent\azcmagent.exe" connect `
-    --service-principal-id $env:appId `
-    --service-principal-secret $env:password `
-    --resource-group $env:resourceGroup `
-    --tenant-id $env:tenantId `
-    --location $env:location `
-    --subscription-id $env:subscriptionId `
-    --tags "Project=jumpstart_azure_arc_servers" "AKSEE=$clusterName"`
-    --correlation-id "d009f5dd-dba8-4ac7-bac9-b54ef3a6671a"
+# # Run connect command
+# & "$env:ProgramFiles\AzureConnectedMachineAgent\azcmagent.exe" connect `
+#     --service-principal-id $env:appId `
+#     --service-principal-secret $env:password `
+#     --resource-group $env:resourceGroup `
+#     --tenant-id $env:tenantId `
+#     --location $env:location `
+#     --subscription-id $env:subscriptionId `
+#     --tags "Project=jumpstart_azure_arc_servers" "AKSEE=$clusterName"`
+#     --correlation-id "d009f5dd-dba8-4ac7-bac9-b54ef3a6671a"
 
 # Changing to Client VM wallpaper
 $imgPath = "C:\Temp\wallpaper.png"
@@ -367,10 +367,6 @@ add-type $code
 
 # Kill the open PowerShell monitoring kubectl get pods
 Stop-Process -Id $kubectlMonShell.Id
-
-# Removing the LogonScript Scheduled Task so it won't run on next reboot
-Unregister-ScheduledTask -TaskName "LogonScript" -Confirm:$false
-Start-Sleep -Seconds 5
 
 Stop-Process -Name powershell -Force
 
