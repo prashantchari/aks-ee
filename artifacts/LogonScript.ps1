@@ -272,9 +272,83 @@ if ($env:kubernetesDistribution -eq "k8s") {
 
 
 
-Write-Host "`n"
-Write-Host "Create Azure Monitor for containers Kubernetes extension instance"
-Write-Host "`n"
+Write-Host "Prep for AIO workload deployment" -ForegroundColor Cyan
+Write-Host "Deploy local path provisioner"
+try {
+    $localPathProvisionerYaml= (Get-ChildItem -Path "$workdir" -Filter local-path-storage.yaml -Recurse).FullName
+    & kubectl apply -f $localPathProvisionerYaml
+    Write-Host "Successfully deployment the local path provisioner"
+}
+catch {
+    Write-Host "Error: local path provisioner deployment failed" -ForegroundColor Red
+    Stop-Transcript | Out-Null
+    Pop-Location
+    exit -1 
+}
+
+Write-Host "Configuring firewall specific to AIO"
+try {
+    $fireWallRuleExists = Get-NetFirewallRule -DisplayName "AIO MQTT Broker"  -ErrorAction SilentlyContinue
+    if ( $null -eq $fireWallRuleExists ) {
+        Write-Host "Add firewall rule for AIO MQTT Broker"
+        New-NetFirewallRule -DisplayName "AIO MQTT Broker" -Direction Inbound -Action Allow | Out-Null
+    }
+    else {
+        Write-Host "firewall rule for AIO MQTT Broker exists, skip configuring firewall rule..."
+    }   
+}
+catch {
+    Write-Host "Error: Firewall rule addition for AIO MQTT broker failed" -ForegroundColor Red
+    Stop-Transcript | Out-Null
+    Pop-Location
+    exit -1 
+}
+
+Write-Host "Configuring port proxy for AIO"
+try {
+    $deploymentInfo = Get-AksEdgeDeploymentInfo
+    # Get the service ip address start to determine the connect address
+    $connectAddress = $deploymentInfo.LinuxNodeConfig.ServiceIpRange.split("-")[0]
+    $portProxyRulExists = netsh interface portproxy show v4tov4 | findstr /C:"1883" | findstr /C:"$connectAddress"
+    if ( $null -eq $portProxyRulExists ) {
+        Write-Host "Configure port proxy for AIO"
+        netsh interface portproxy add v4tov4 listenport=1883 listenaddress=0.0.0.0 connectport=1883 connectaddress=$connectAddress | Out-Null
+    }
+    else {
+        Write-Host "Port proxy rule for AIO exists, skip configuring port proxy..."
+    } 
+}
+catch {
+    Write-Host "Error: port proxy update for AIO failed" -ForegroundColor Red
+    Stop-Transcript | Out-Null
+    Pop-Location
+    exit -1 
+}
+
+Write-Host "Update the iptables rules"
+try {
+    $iptableRulesExist = Invoke-AksEdgeNodeCommand -NodeType "Linux" -command "sudo iptables-save | grep -- '-m tcp --dport 9110 -j ACCEPT'" -ignoreError
+    if ( $null -eq $iptableRulesExist ) {
+        Invoke-AksEdgeNodeCommand -NodeType "Linux" -command "sudo iptables -A INPUT -p tcp -m state --state NEW -m tcp --dport 9110 -j ACCEPT"
+        Write-Host "Updated runtime iptable rules for node exporter"
+        Invoke-AksEdgeNodeCommand -NodeType "Linux" -command "sudo sed -i '/-A OUTPUT -j ACCEPT/i-A INPUT -p tcp -m tcp --dport 9110 -j ACCEPT' /etc/systemd/scripts/ip4save"
+        Write-Host "Persisted iptable rules for node exporter"
+    }
+    else {
+        Write-Host "iptable rule exists, skip configuring iptable rules..."
+    } 
+}
+catch {
+    Write-Host "Error: iptable rule update failed" -ForegroundColor Red
+    Stop-Transcript | Out-Null
+    Pop-Location
+    exit -1 
+}
+
+
+# Write-Host "`n"
+# Write-Host "Create Azure Monitor for containers Kubernetes extension instance"
+# Write-Host "`n"
 
 # Deploying Azure log-analytics workspace
 # $workspaceName = ($Env:arcClusterName).ToLower()
