@@ -242,8 +242,6 @@ Write-Host "`n"
 Write-Host "Onboarding the AKS Edge Essentials cluster to Azure Arc..."
 Write-Host "`n"
 
-$kubectlMonShell = Start-Process -PassThru PowerShell { for (0 -lt 1) { kubectl get pod -A; Start-Sleep -Seconds 5; Clear-Host } }
-
 #Tag
 $clusterId = $(kubectl get configmap -n aksedge aksedge -o jsonpath="{.data.clustername}")
 
@@ -419,8 +417,8 @@ catch {
 # Changing to Client VM wallpaper
 
 # Kill the open PowerShell monitoring kubectl get pods
-Stop-Process -Id $kubectlMonShell.Id
 
+Write-Host "Stopping powershell process"
 Stop-Process -Name powershell -Force
 
 Stop-Transcript
