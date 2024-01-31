@@ -416,10 +416,5 @@ catch {
 
 # Changing to Client VM wallpaper
 
-# Kill the open PowerShell monitoring kubectl get pods
-
-Write-Host "Stopping powershell process"
-Stop-Process -Name powershell -Force
-
 Stop-Transcript
 exit 0
