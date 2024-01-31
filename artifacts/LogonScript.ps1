@@ -422,3 +422,4 @@ Write-Host "Stopping powershell process"
 Stop-Process -Name powershell -Force
 
 Stop-Transcript
+exit 0
