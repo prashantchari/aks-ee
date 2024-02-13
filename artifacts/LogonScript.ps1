@@ -79,7 +79,7 @@ if ($env:windowsNode -eq $true) {
             "LinuxNode": {
                 "CpuCount": 8,
                 "MemoryInMB": 16384,
-                "DataSizeInGB": 20
+                "DataSizeInGB": 30
             },
             "WindowsNode": {
                 "CpuCount": 2,
@@ -109,9 +109,9 @@ if ($env:windowsNode -eq $true) {
     "Machines": [
         {
             "LinuxNode": {
-                "CpuCount": 4,
-                "MemoryInMB": 4096,
-                "DataSizeInGB": 20
+                "CpuCount": 8,
+                "MemoryInMB": 16384,
+                "DataSizeInGB": 30
             }
         }
     ]
