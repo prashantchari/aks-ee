@@ -242,11 +242,7 @@ Write-Host "`n"
 Write-Host "Onboarding the AKS Edge Essentials cluster to Azure Arc..."
 Write-Host "`n"
 
-#Tag
-$clusterId = $(kubectl get configmap -n aksedge aksedge -o jsonpath="{.data.clustername}")
-
-$guid = ([System.Guid]::NewGuid()).ToString().subString(0,5).ToLower()
-$Env:arcClusterName = "$Env:resourceGroup-$guid"
+$Env:arcClusterName = "$Env:clusterName"
 
 
 if ($env:kubernetesDistribution -eq "k8s") {
@@ -254,14 +250,12 @@ if ($env:kubernetesDistribution -eq "k8s") {
     --resource-group $Env:resourceGroup `
     --location $env:location `
     --distribution aks_edge_k8s `
-    --tags "Project=jumpstart_azure_arc_k8s" "ClusterId=$clusterId" `
     --correlation-id "d009f5dd-dba8-4ac7-bac9-b54ef3a6671a"
 } else {
     az connectedk8s connect --name $Env:arcClusterName `
     --resource-group $Env:resourceGroup `
     --location $env:location `
     --distribution aks_edge_k3s `
-    --tags "Project=jumpstart_azure_arc_k8s" "ClusterId=$clusterId" `
     --correlation-id "d009f5dd-dba8-4ac7-bac9-b54ef3a6671a"
 }
 
