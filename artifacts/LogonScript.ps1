@@ -259,6 +259,8 @@ if ($env:kubernetesDistribution -eq "k8s") {
     --correlation-id "d009f5dd-dba8-4ac7-bac9-b54ef3a6671a"
 }
 
+# enable features
+az connectedk8s enable-features --name $Env:arcClusterName --resource-group $Env:resourceGroup --features cluster-connect custom-locations --custom-locations-oid 51dfe1e8-70c6-4de5-a08e-e18aff23d815
 
 
 Write-Host "Prep for AIO workload deployment" -ForegroundColor Cyan
