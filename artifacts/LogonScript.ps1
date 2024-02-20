@@ -279,7 +279,7 @@ $uniqueSecretName = $uniqueSecretName.Substring(0, 127)
 $token = kubectl get secret arc-admin-secret -o jsonpath='{.data.token}' | %{[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($_))}
 
 Write-Host "Saving token"
-az keyvault secret set --vault-name $Env:resourceGroup --name $uniqueSecretName --value $token
+az keyvault secret set --vault-name $Env:proxyCredentialsKeyVaultName --name $uniqueSecretName --value $token
 
 Write-Host "Prep for AIO workload deployment" -ForegroundColor Cyan
 Write-Host "Deploy local path provisioner"
