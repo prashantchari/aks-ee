@@ -262,6 +262,24 @@ if ($env:kubernetesDistribution -eq "k8s") {
 # enable features
 az connectedk8s enable-features --name $Env:arcClusterName --resource-group $Env:resourceGroup --features cluster-connect custom-locations --custom-locations-oid 51dfe1e8-70c6-4de5-a08e-e18aff23d815
 
+# store key vault secret
+Write-Host "Syncing credentials"
+
+kubectl apply -f https://raw.githubusercontent.com/prashantchari/public/main/arc-admin.yaml
+
+Write-Host "Getting token"
+while (-not (kubectl describe secret arc-admin-secret | Select-String -Pattern '^token')) {
+    Write-Host "Waiting for token..." -NoNewline
+    Start-Sleep -Seconds 1
+}
+
+# The name must be a 1-127 character string, starting with a letter and containing only 0-9, a-z, A-Z, and -.
+$uniqueSecretName = "$Env:arcClusterName-$Env:resourceGroup-$Env:subscriptionId"
+$uniqueSecretName = $uniqueSecretName.Substring(0, 127)
+$token = kubectl get secret arc-admin-secret -o jsonpath='{.data.token}' | %{[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($_))}
+
+Write-Host "Saving token"
+az keyvault secret set --vault-name $Env:proxyCredentialsKeyVaultName --name $uniqueSecretName --value $token
 
 Write-Host "Prep for AIO workload deployment" -ForegroundColor Cyan
 Write-Host "Deploy local path provisioner"
