@@ -211,7 +211,7 @@ az account set --subscription $Env:subscriptionId
 az config set extension.use_dynamic_install=yes_without_prompt
 Write-Host "`n"
 Write-Host "Installing Azure CLI extensions"
-az extension add --name connectedk8s --version 1.3.17
+az extension add --name connectedk8s
 az extension add --name k8s-extension
 Write-Host "`n"
 
@@ -220,23 +220,7 @@ Write-Host "Registering Azure Arc providers, hold tight..."
 Write-Host "`n"
 az provider register --namespace Microsoft.Kubernetes --wait
 az provider register --namespace Microsoft.KubernetesConfiguration --wait
-az provider register --namespace Microsoft.HybridCompute --wait
-az provider register --namespace Microsoft.GuestConfiguration --wait
-az provider register --namespace Microsoft.HybridConnectivity --wait
 az provider register --namespace Microsoft.ExtendedLocation --wait
-
-az provider show --namespace Microsoft.Kubernetes -o table
-Write-Host "`n"
-az provider show --namespace Microsoft.KubernetesConfiguration -o table
-Write-Host "`n"
-az provider show --namespace Microsoft.HybridCompute -o table
-Write-Host "`n"
-az provider show --namespace Microsoft.GuestConfiguration -o table
-Write-Host "`n"
-az provider show --namespace Microsoft.HybridConnectivity -o table
-Write-Host "`n"
-az provider show --namespace Microsoft.ExtendedLocation -o table
-Write-Host "`n"
 
 # Onboarding the cluster to Azure Arc
 Write-Host "Onboarding the AKS Edge Essentials cluster to Azure Arc..."
@@ -244,30 +228,30 @@ Write-Host "`n"
 
 $Env:arcClusterName = "$Env:clusterName"
 
+# https://github.com/Azure/azure-cli-extensions/issues/6637
+Invoke-WebRequest -Uri https://secure.globalsign.net/cacert/Root-R1.crt -OutFile c:\globalsignR1.crt
+Import-Certificate -FilePath c:\globalsignR1.crt -CertStoreLocation Cert:\LocalMachine\Root
 
 if ($env:kubernetesDistribution -eq "k8s") {
     az connectedk8s connect --name $Env:arcClusterName `
     --resource-group $Env:resourceGroup `
     --location $env:location `
-    --distribution aks_edge_k8s `
-    --correlation-id "d009f5dd-dba8-4ac7-bac9-b54ef3a6671a"
+    --distribution aks_edge_k8s
 } else {
     az connectedk8s connect --name $Env:arcClusterName `
     --resource-group $Env:resourceGroup `
     --location $env:location `
-    --distribution aks_edge_k3s `
-    --correlation-id "d009f5dd-dba8-4ac7-bac9-b54ef3a6671a"
+    --distribution aks_edge_k3s
 }
 
 # enable features
 az connectedk8s enable-features --name $Env:arcClusterName --resource-group $Env:resourceGroup --features cluster-connect custom-locations --custom-locations-oid 51dfe1e8-70c6-4de5-a08e-e18aff23d815
 
-
 Write-Host "Prep for AIO workload deployment" -ForegroundColor Cyan
 Write-Host "Deploy local path provisioner"
 try {
     $localPathProvisionerYaml= (Get-ChildItem -Path "$workdir" -Filter local-path-storage.yaml -Recurse).FullName
-    & kubectl apply -f $localPathProvisionerYaml
+    kubectl apply -f $localPathProvisionerYaml
     Write-Host "Successfully deployment the local path provisioner"
 }
 catch {
@@ -335,82 +319,6 @@ catch {
     Pop-Location
     exit -1 
 }
-
-
-# Write-Host "`n"
-# Write-Host "Create Azure Monitor for containers Kubernetes extension instance"
-# Write-Host "`n"
-
-# Deploying Azure log-analytics workspace
-# $workspaceName = ($Env:arcClusterName).ToLower()
-# $workspaceResourceId = az monitor log-analytics workspace create `
-#     --resource-group $Env:resourceGroup `
-#     --workspace-name "$workspaceName-law" `
-#     --query id -o tsv
-
-# # Deploying Azure Monitor for containers Kubernetes extension instance
-# Write-Host "`n"
-# az k8s-extension create --name "azuremonitor-containers" `
-#     --cluster-name $Env:arcClusterName `
-#     --resource-group $Env:resourceGroup `
-#     --cluster-type connectedClusters `
-#     --extension-type Microsoft.AzureMonitor.Containers `
-#     --configuration-settings logAnalyticsWorkspaceResourceID=$workspaceResourceId
-
-# # Deploying Azure Defender Kubernetes extension instance
-# Write-Host "`n"
-# Write-Host "Creating Azure Defender Kubernetes extension..."
-# Write-Host "`n"
-# az k8s-extension create --name "azure-defender" `
-#                         --cluster-name $Env:arcClusterName `
-#                         --resource-group $Env:resourceGroup `
-#                         --cluster-type connectedClusters `
-#                         --extension-type Microsoft.AzureDefender.Kubernetes
-
-# # Deploying Azure Policy Kubernetes extension instance
-# Write-Host "`n"
-# Write-Host "Create Azure Policy extension..."
-# Write-Host "`n"
-# az k8s-extension create --cluster-type connectedClusters `
-#                         --cluster-name $Env:arcClusterName `
-#                         --resource-group $Env:resourceGroup `
-#                         --extension-type Microsoft.PolicyInsights `
-#                         --name azurepolicy
-
-## Arc - enabled Server
-## Configure the OS to allow Azure Arc Agent to be deploy on an Azure VM
-# Write-Host "`n"
-# Write-Host "Configure the OS to allow Azure Arc Agent to be deploy on an Azure VM"
-# Set-Service WindowsAzureGuestAgent -StartupType Disabled -Verbose
-# Stop-Service WindowsAzureGuestAgent -Force -Verbose
-# New-NetFirewallRule -Name BlockAzureIMDS -DisplayName "Block access to Azure IMDS" -Enabled True -Profile Any -Direction Outbound -Action Block -RemoteAddress 169.254.169.254
-
-# ## Azure Arc agent Installation
-# Write-Host "`n"
-# Write-Host "Onboarding the Azure VM to Azure Arc..."
-
-# # Download the package
-# function download1() { $ProgressPreference = "SilentlyContinue"; Invoke-WebRequest -UseBasicParsing -Uri https://aka.ms/AzureConnectedMachineAgent -OutFile AzureConnectedMachineAgent.msi }
-# download1
-
-# # Install the package
-# msiexec /i AzureConnectedMachineAgent.msi /l*v installationlog.txt /qn | Out-String
-
-# #Tag
-# $clusterName = "$env:computername-$env:kubernetesDistribution"
-
-# # Run connect command
-# & "$env:ProgramFiles\AzureConnectedMachineAgent\azcmagent.exe" connect `
-#     --service-principal-id $env:appId `
-#     --service-principal-secret $env:password `
-#     --resource-group $env:resourceGroup `
-#     --tenant-id $env:tenantId `
-#     --location $env:location `
-#     --subscription-id $env:subscriptionId `
-#     --tags "Project=jumpstart_azure_arc_servers" "AKSEE=$clusterName"`
-#     --correlation-id "d009f5dd-dba8-4ac7-bac9-b54ef3a6671a"
-
-# Changing to Client VM wallpaper
 
 Stop-Transcript
 exit 0
