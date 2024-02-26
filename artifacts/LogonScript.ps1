@@ -311,11 +311,15 @@ if ($env:kubernetesDistribution -eq "k8s") {
     az connectedk8s connect --name $Env:arcClusterName `
     --resource-group $Env:resourceGroup `
     --location $env:location `
+    --custom-locations-oid 51dfe1e8-70c6-4de5-a08e-e18aff23d815 `
+    --onboarding-timeout 1200 `
     --distribution aks_edge_k8s | Write-Host
 } else {
     az connectedk8s connect --name $Env:arcClusterName `
     --resource-group $Env:resourceGroup `
     --location $env:location `
+    --custom-locations-oid 51dfe1e8-70c6-4de5-a08e-e18aff23d815 `
+    --onboarding-timeout 1200 `
     --distribution aks_edge_k3s | Write-Host
 }
 
