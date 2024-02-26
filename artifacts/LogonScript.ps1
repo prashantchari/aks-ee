@@ -194,59 +194,6 @@ Write-Host "`n"
 kubectl get nodes -o wide | Write-Host
 Write-Host "`n"
 
-# az version
-az -v
-
-# Login as service principal
-az login --service-principal --username $Env:appId --password=$Env:password --tenant $Env:tenantId
-
-# Set default subscription to run commands against
-# "subscriptionId" value comes from clientVM.json ARM template, based on which 
-# subscription user deployed ARM template to. This is needed in case Service 
-# Principal has access to multiple subscriptions, which can break the automation logic
-az account set --subscription $Env:subscriptionId
-
-# Installing Azure CLI extensions
-# Making extension install dynamic
-az config set extension.use_dynamic_install=yes_without_prompt
-Write-Host "`n"
-Write-Host "Installing Azure CLI extensions"
-az extension add --name connectedk8s
-az extension add --name k8s-extension
-Write-Host "`n"
-
-# Registering Azure Arc providers
-Write-Host "Registering Azure Arc providers, hold tight..."
-Write-Host "`n"
-az provider register --namespace Microsoft.Kubernetes --wait
-az provider register --namespace Microsoft.KubernetesConfiguration --wait
-az provider register --namespace Microsoft.ExtendedLocation --wait
-
-# Onboarding the cluster to Azure Arc
-Write-Host "Onboarding the AKS Edge Essentials cluster to Azure Arc..."
-Write-Host "`n"
-
-$Env:arcClusterName = "$Env:clusterName"
-
-# https://github.com/Azure/azure-cli-extensions/issues/6637
-Invoke-WebRequest -Uri https://secure.globalsign.net/cacert/Root-R1.crt -OutFile c:\globalsignR1.crt
-Import-Certificate -FilePath c:\globalsignR1.crt -CertStoreLocation Cert:\LocalMachine\Root
-
-if ($env:kubernetesDistribution -eq "k8s") {
-    az connectedk8s connect --name $Env:arcClusterName `
-    --resource-group $Env:resourceGroup `
-    --location $env:location `
-    --distribution aks_edge_k8s | Write-Host
-} else {
-    az connectedk8s connect --name $Env:arcClusterName `
-    --resource-group $Env:resourceGroup `
-    --location $env:location `
-    --distribution aks_edge_k3s | Write-Host
-}
-
-# enable features
-az connectedk8s enable-features --name $Env:arcClusterName --resource-group $Env:resourceGroup --features cluster-connect custom-locations --custom-locations-oid 51dfe1e8-70c6-4de5-a08e-e18aff23d815
-
 Write-Host "Prep for AIO workload deployment" -ForegroundColor Cyan
 Write-Host "Deploy local path provisioner"
 try {
@@ -319,6 +266,61 @@ catch {
     Pop-Location
     exit -1 
 }
+
+
+
+# az version
+az -v
+
+# Login as service principal
+az login --service-principal --username $Env:appId --password=$Env:password --tenant $Env:tenantId
+
+# Set default subscription to run commands against
+# "subscriptionId" value comes from clientVM.json ARM template, based on which 
+# subscription user deployed ARM template to. This is needed in case Service 
+# Principal has access to multiple subscriptions, which can break the automation logic
+az account set --subscription $Env:subscriptionId
+
+# Installing Azure CLI extensions
+# Making extension install dynamic
+az config set extension.use_dynamic_install=yes_without_prompt
+Write-Host "`n"
+Write-Host "Installing Azure CLI extensions"
+az extension add --name connectedk8s
+az extension add --name k8s-extension
+Write-Host "`n"
+
+# Registering Azure Arc providers
+Write-Host "Registering Azure Arc providers, hold tight..."
+Write-Host "`n"
+az provider register --namespace Microsoft.Kubernetes --wait
+az provider register --namespace Microsoft.KubernetesConfiguration --wait
+az provider register --namespace Microsoft.ExtendedLocation --wait
+
+# Onboarding the cluster to Azure Arc
+Write-Host "Onboarding the AKS Edge Essentials cluster to Azure Arc..."
+Write-Host "`n"
+
+$Env:arcClusterName = "$Env:clusterName"
+
+# https://github.com/Azure/azure-cli-extensions/issues/6637
+Invoke-WebRequest -Uri https://secure.globalsign.net/cacert/Root-R1.crt -OutFile c:\globalsignR1.crt
+Import-Certificate -FilePath c:\globalsignR1.crt -CertStoreLocation Cert:\LocalMachine\Root
+
+if ($env:kubernetesDistribution -eq "k8s") {
+    az connectedk8s connect --name $Env:arcClusterName `
+    --resource-group $Env:resourceGroup `
+    --location $env:location `
+    --distribution aks_edge_k8s | Write-Host
+} else {
+    az connectedk8s connect --name $Env:arcClusterName `
+    --resource-group $Env:resourceGroup `
+    --location $env:location `
+    --distribution aks_edge_k3s | Write-Host
+}
+
+# enable features
+az connectedk8s enable-features --name $Env:arcClusterName --resource-group $Env:resourceGroup --features cluster-connect custom-locations --custom-locations-oid 51dfe1e8-70c6-4de5-a08e-e18aff23d815
 
 Stop-Transcript
 exit 0
