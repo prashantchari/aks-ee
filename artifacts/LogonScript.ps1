@@ -191,7 +191,7 @@ if ($env:windowsNode -eq $true) {
 Write-Host "`n"
 Write-Host "Checking kubernetes nodes"
 Write-Host "`n"
-kubectl get nodes -o wide
+kubectl get nodes -o wide | Write-Host
 Write-Host "`n"
 
 # az version
@@ -236,12 +236,12 @@ if ($env:kubernetesDistribution -eq "k8s") {
     az connectedk8s connect --name $Env:arcClusterName `
     --resource-group $Env:resourceGroup `
     --location $env:location `
-    --distribution aks_edge_k8s
+    --distribution aks_edge_k8s | Write-Host
 } else {
     az connectedk8s connect --name $Env:arcClusterName `
     --resource-group $Env:resourceGroup `
     --location $env:location `
-    --distribution aks_edge_k3s
+    --distribution aks_edge_k3s | Write-Host
 }
 
 # enable features
@@ -251,8 +251,8 @@ Write-Host "Prep for AIO workload deployment" -ForegroundColor Cyan
 Write-Host "Deploy local path provisioner"
 try {
     $localPathProvisionerYaml= (Get-ChildItem -Path "$workdir" -Filter local-path-storage.yaml -Recurse).FullName
-    kubectl apply -f $localPathProvisionerYaml
-    Write-Host "Successfully deployment the local path provisioner"
+    kubectl apply -f $localPathProvisionerYaml | Write-Host
+    Write-Host "Successfully deployment the local path provisioner from $localPathProvisionerYaml"
 }
 catch {
     Write-Host "Error: local path provisioner deployment failed" -ForegroundColor Red
