@@ -91,6 +91,13 @@
             },
             "defaultValue": "microsoft"
         },
+        "proxyCredentialsKeyVaultName": {
+            "type": "string",
+            "metadata": {
+                "description": "Target proxy credential key vault"
+            },
+            "defaultValue": "proxy-credentials-test"
+        },
         "githubBranch": {
             "type": "string",
             "metadata": {
