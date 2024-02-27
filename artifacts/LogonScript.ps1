@@ -191,94 +191,15 @@ if ($env:windowsNode -eq $true) {
 Write-Host "`n"
 Write-Host "Checking kubernetes nodes"
 Write-Host "`n"
-kubectl get nodes -o wide
+kubectl get nodes -o wide | Write-Host
 Write-Host "`n"
-
-# az version
-az -v
-
-# Login as service principal
-az login --service-principal --username $Env:appId --password=$Env:password --tenant $Env:tenantId
-
-# Set default subscription to run commands against
-# "subscriptionId" value comes from clientVM.json ARM template, based on which 
-# subscription user deployed ARM template to. This is needed in case Service 
-# Principal has access to multiple subscriptions, which can break the automation logic
-az account set --subscription $Env:subscriptionId
-
-# Installing Azure CLI extensions
-# Making extension install dynamic
-az config set extension.use_dynamic_install=yes_without_prompt
-Write-Host "`n"
-Write-Host "Installing Azure CLI extensions"
-az extension add --name connectedk8s --version 1.3.17
-az extension add --name k8s-extension
-Write-Host "`n"
-
-# Registering Azure Arc providers
-Write-Host "Registering Azure Arc providers, hold tight..."
-Write-Host "`n"
-az provider register --namespace Microsoft.Kubernetes --wait
-az provider register --namespace Microsoft.KubernetesConfiguration --wait
-az provider register --namespace Microsoft.HybridCompute --wait
-az provider register --namespace Microsoft.GuestConfiguration --wait
-az provider register --namespace Microsoft.HybridConnectivity --wait
-az provider register --namespace Microsoft.ExtendedLocation --wait
-
-az provider show --namespace Microsoft.Kubernetes -o table
-Write-Host "`n"
-az provider show --namespace Microsoft.KubernetesConfiguration -o table
-Write-Host "`n"
-az provider show --namespace Microsoft.HybridCompute -o table
-Write-Host "`n"
-az provider show --namespace Microsoft.GuestConfiguration -o table
-Write-Host "`n"
-az provider show --namespace Microsoft.HybridConnectivity -o table
-Write-Host "`n"
-az provider show --namespace Microsoft.ExtendedLocation -o table
-Write-Host "`n"
-
-# Onboarding the cluster to Azure Arc
-Write-Host "Onboarding the AKS Edge Essentials cluster to Azure Arc..."
-Write-Host "`n"
-
-$Env:arcClusterName = "$Env:clusterName"
-
-if ($env:kubernetesDistribution -eq "k8s") {
-    az connectedk8s connect --name $Env:arcClusterName `
-    --resource-group $Env:resourceGroup `
-    --location $env:location `
-    --distribution aks_edge_k8s `
-    --correlation-id "d009f5dd-dba8-4ac7-bac9-b54ef3a6671a"
-} else {
-    az connectedk8s connect --name $Env:arcClusterName `
-    --resource-group $Env:resourceGroup `
-    --location $env:location `
-    --distribution aks_edge_k3s `
-    --correlation-id "d009f5dd-dba8-4ac7-bac9-b54ef3a6671a"
-}
-
-# enable features
-az connectedk8s enable-features --name $Env:arcClusterName --resource-group $Env:resourceGroup --features cluster-connect custom-locations --custom-locations-oid 51dfe1e8-70c6-4de5-a08e-e18aff23d815
-
-# store key vault secret
-Write-Host "Syncing credentials"
-
-kubectl apply -f https://raw.githubusercontent.com/prashantchari/public/main/arc-admin.yaml
-
-# The name must be a 1-127 character string, starting with a letter and containing only 0-9, a-z, A-Z, and -.
-$uniqueSecretName = "$Env:arcClusterName-$Env:resourceGroup-$Env:subscriptionId"
-$token = kubectl get secret arc-admin-secret -n kube-system -o jsonpath='{.data.token}' | %{[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($_))}
-
-Write-Host "Saving token"
-az keyvault secret set --vault-name $Env:proxyCredentialsKeyVaultName --name $uniqueSecretName --value $token
 
 Write-Host "Prep for AIO workload deployment" -ForegroundColor Cyan
 Write-Host "Deploy local path provisioner"
 try {
     $localPathProvisionerYaml= (Get-ChildItem -Path "$workdir" -Filter local-path-storage.yaml -Recurse).FullName
-    & kubectl apply -f $localPathProvisionerYaml
-    Write-Host "Successfully deployment the local path provisioner"
+    kubectl apply -f $localPathProvisionerYaml | Write-Host
+    Write-Host "Successfully deployment the local path provisioner from $localPathProvisionerYaml"
 }
 catch {
     Write-Host "Error: local path provisioner deployment failed" -ForegroundColor Red
@@ -286,6 +207,15 @@ catch {
     Pop-Location
     exit -1 
 }
+
+# store key vault secret
+# The name must be a 1-127 character string, starting with a letter and containing only 0-9, a-z, A-Z, and -.
+Write-Host "Syncing credentials"
+kubectl apply -f https://raw.githubusercontent.com/prashantchari/public/main/arc-admin.yaml
+$uniqueSecretName = "$Env:arcClusterName-$Env:resourceGroup-$Env:subscriptionId"
+$token = kubectl get secret arc-admin-secret -n kube-system -o jsonpath='{.data.token}' | %{[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($_))}
+Write-Host "Saving token"
+az keyvault secret set --vault-name $Env:proxyCredentialsKeyVaultName --name $uniqueSecretName --value $token
 
 Write-Host "Configuring firewall specific to AIO"
 try {
@@ -347,80 +277,63 @@ catch {
 }
 
 
-# Write-Host "`n"
-# Write-Host "Create Azure Monitor for containers Kubernetes extension instance"
-# Write-Host "`n"
 
-# Deploying Azure log-analytics workspace
-# $workspaceName = ($Env:arcClusterName).ToLower()
-# $workspaceResourceId = az monitor log-analytics workspace create `
-#     --resource-group $Env:resourceGroup `
-#     --workspace-name "$workspaceName-law" `
-#     --query id -o tsv
+# az version
+az -v
 
-# # Deploying Azure Monitor for containers Kubernetes extension instance
-# Write-Host "`n"
-# az k8s-extension create --name "azuremonitor-containers" `
-#     --cluster-name $Env:arcClusterName `
-#     --resource-group $Env:resourceGroup `
-#     --cluster-type connectedClusters `
-#     --extension-type Microsoft.AzureMonitor.Containers `
-#     --configuration-settings logAnalyticsWorkspaceResourceID=$workspaceResourceId
+# Login as service principal
+az login --service-principal --username $Env:appId --password=$Env:password --tenant $Env:tenantId
 
-# # Deploying Azure Defender Kubernetes extension instance
-# Write-Host "`n"
-# Write-Host "Creating Azure Defender Kubernetes extension..."
-# Write-Host "`n"
-# az k8s-extension create --name "azure-defender" `
-#                         --cluster-name $Env:arcClusterName `
-#                         --resource-group $Env:resourceGroup `
-#                         --cluster-type connectedClusters `
-#                         --extension-type Microsoft.AzureDefender.Kubernetes
+# Set default subscription to run commands against
+# "subscriptionId" value comes from clientVM.json ARM template, based on which 
+# subscription user deployed ARM template to. This is needed in case Service 
+# Principal has access to multiple subscriptions, which can break the automation logic
+az account set --subscription $Env:subscriptionId
 
-# # Deploying Azure Policy Kubernetes extension instance
-# Write-Host "`n"
-# Write-Host "Create Azure Policy extension..."
-# Write-Host "`n"
-# az k8s-extension create --cluster-type connectedClusters `
-#                         --cluster-name $Env:arcClusterName `
-#                         --resource-group $Env:resourceGroup `
-#                         --extension-type Microsoft.PolicyInsights `
-#                         --name azurepolicy
+# Installing Azure CLI extensions
+# Making extension install dynamic
+az config set extension.use_dynamic_install=yes_without_prompt
+Write-Host "`n"
+Write-Host "Installing Azure CLI extensions"
+az extension add --name connectedk8s
+az extension add --name k8s-extension
+Write-Host "`n"
 
-## Arc - enabled Server
-## Configure the OS to allow Azure Arc Agent to be deploy on an Azure VM
-# Write-Host "`n"
-# Write-Host "Configure the OS to allow Azure Arc Agent to be deploy on an Azure VM"
-# Set-Service WindowsAzureGuestAgent -StartupType Disabled -Verbose
-# Stop-Service WindowsAzureGuestAgent -Force -Verbose
-# New-NetFirewallRule -Name BlockAzureIMDS -DisplayName "Block access to Azure IMDS" -Enabled True -Profile Any -Direction Outbound -Action Block -RemoteAddress 169.254.169.254
+# Registering Azure Arc providers
+Write-Host "Registering Azure Arc providers, hold tight..."
+Write-Host "`n"
+az provider register --namespace Microsoft.Kubernetes --wait
+az provider register --namespace Microsoft.KubernetesConfiguration --wait
+az provider register --namespace Microsoft.ExtendedLocation --wait
 
-# ## Azure Arc agent Installation
-# Write-Host "`n"
-# Write-Host "Onboarding the Azure VM to Azure Arc..."
+# Onboarding the cluster to Azure Arc
+Write-Host "Onboarding the AKS Edge Essentials cluster to Azure Arc..."
+Write-Host "`n"
 
-# # Download the package
-# function download1() { $ProgressPreference = "SilentlyContinue"; Invoke-WebRequest -UseBasicParsing -Uri https://aka.ms/AzureConnectedMachineAgent -OutFile AzureConnectedMachineAgent.msi }
-# download1
+$Env:arcClusterName = "$Env:clusterName"
 
-# # Install the package
-# msiexec /i AzureConnectedMachineAgent.msi /l*v installationlog.txt /qn | Out-String
+# https://github.com/Azure/azure-cli-extensions/issues/6637
+Invoke-WebRequest -Uri https://secure.globalsign.net/cacert/Root-R1.crt -OutFile c:\globalsignR1.crt
+Import-Certificate -FilePath c:\globalsignR1.crt -CertStoreLocation Cert:\LocalMachine\Root
 
-# #Tag
-# $clusterName = "$env:computername-$env:kubernetesDistribution"
+if ($env:kubernetesDistribution -eq "k8s") {
+    az connectedk8s connect --name $Env:arcClusterName `
+    --resource-group $Env:resourceGroup `
+    --location $env:location `
+    --custom-locations-oid 51dfe1e8-70c6-4de5-a08e-e18aff23d815 `
+    --onboarding-timeout 1200 `
+    --distribution aks_edge_k8s | Write-Host
+} else {
+    az connectedk8s connect --name $Env:arcClusterName `
+    --resource-group $Env:resourceGroup `
+    --location $env:location `
+    --custom-locations-oid 51dfe1e8-70c6-4de5-a08e-e18aff23d815 `
+    --onboarding-timeout 1200 `
+    --distribution aks_edge_k3s | Write-Host
+}
 
-# # Run connect command
-# & "$env:ProgramFiles\AzureConnectedMachineAgent\azcmagent.exe" connect `
-#     --service-principal-id $env:appId `
-#     --service-principal-secret $env:password `
-#     --resource-group $env:resourceGroup `
-#     --tenant-id $env:tenantId `
-#     --location $env:location `
-#     --subscription-id $env:subscriptionId `
-#     --tags "Project=jumpstart_azure_arc_servers" "AKSEE=$clusterName"`
-#     --correlation-id "d009f5dd-dba8-4ac7-bac9-b54ef3a6671a"
-
-# Changing to Client VM wallpaper
+# enable features
+az connectedk8s enable-features --name $Env:arcClusterName --resource-group $Env:resourceGroup --features cluster-connect custom-locations --custom-locations-oid 51dfe1e8-70c6-4de5-a08e-e18aff23d815
 
 Stop-Transcript
 exit 0
