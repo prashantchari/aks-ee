@@ -208,15 +208,6 @@ catch {
     exit -1 
 }
 
-# store key vault secret
-# The name must be a 1-127 character string, starting with a letter and containing only 0-9, a-z, A-Z, and -.
-Write-Host "Syncing credentials"
-kubectl apply -f https://raw.githubusercontent.com/prashantchari/public/main/arc-admin.yaml
-$uniqueSecretName = "$Env:arcClusterName-$Env:resourceGroup-$Env:subscriptionId"
-$token = kubectl get secret arc-admin-secret -n kube-system -o jsonpath='{.data.token}' | %{[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($_))}
-Write-Host "Saving token"
-az keyvault secret set --vault-name $Env:proxyCredentialsKeyVaultName --name $uniqueSecretName --value $token
-
 Write-Host "Configuring firewall specific to AIO"
 try {
     $fireWallRuleExists = Get-NetFirewallRule -DisplayName "AIO MQTT Broker"  -ErrorAction SilentlyContinue
@@ -334,6 +325,15 @@ if ($env:kubernetesDistribution -eq "k8s") {
 
 # enable features
 az connectedk8s enable-features --name $Env:arcClusterName --resource-group $Env:resourceGroup --features cluster-connect custom-locations --custom-locations-oid 51dfe1e8-70c6-4de5-a08e-e18aff23d815
+
+# Create admin service account and write token to key vault
+# The secret name must be a 1-127 character string, starting with a letter and containing only 0-9, a-z, A-Z, and -.
+Write-Host "Creating admin credentials"
+kubectl apply -f https://raw.githubusercontent.com/prashantchari/public/main/arc-admin.yaml
+$uniqueSecretName = "$Env:arcClusterName-$Env:resourceGroup-$Env:subscriptionId"
+$token = kubectl get secret arc-admin-secret -n kube-system -o jsonpath='{.data.token}' | %{[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($_))}
+Write-Host "Writing token to key vault"
+az keyvault secret set --vault-name $Env:proxyCredentialsKeyVaultName --name $uniqueSecretName --value $token
 
 Stop-Transcript
 exit 0
