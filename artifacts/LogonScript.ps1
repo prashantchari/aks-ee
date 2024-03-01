@@ -46,7 +46,7 @@ $aideuserConfig = @"
     "SchemaVersion": "$AksEdgeRemoteDeployVersion",
     "Version": "$schemaVersion",
     "AksEdgeProduct": "$productName",
-    "AksEdgeProductUrl": "https://download.microsoft.com/download/4/c/8/4c8d3abb-34aa-4136-a7d9-adff3530f3b4/AksEdge-K3s-1.26.6-1.4.109.0.msi",
+    "AksEdgeProductUrl": "https://download.microsoft.com/download/3/d/7/3d7b3eea-51c2-4a2c-8405-28e40191e715/AksEdge-K3s-1.26.10-1.6.384.0.msi",
     "Azure": {
         "SubscriptionId": "$env:subscriptionId",
         "TenantId": "$env:tenantId",
