@@ -27,7 +27,7 @@ if ($env:kubernetesDistribution -eq "k8s") {
 }
 
 Write-Host "Fetching the latest AKS Edge Essentials release."
-$latestReleaseTag = (Invoke-WebRequest $aksEEReleasesUrl -UseBasicParsing | ConvertFrom-Json)[0].tag_name
+$latestReleaseTag = "1.6.384.0" # (Invoke-WebRequest $aksEEReleasesUrl -UseBasicParsing | ConvertFrom-Json)[0].tag_name
 
 $AKSEEReleaseDownloadUrl = "https://github.com/Azure/AKS-Edge/archive/refs/tags/$latestReleaseTag.zip"
 $output = Join-Path "C:\temp" "$latestReleaseTag.zip"
@@ -46,7 +46,7 @@ $aideuserConfig = @"
     "SchemaVersion": "$AksEdgeRemoteDeployVersion",
     "Version": "$schemaVersion",
     "AksEdgeProduct": "$productName",
-    "AksEdgeProductUrl": "",
+    "AksEdgeProductUrl": "https://download.microsoft.com/download/4/c/8/4c8d3abb-34aa-4136-a7d9-adff3530f3b4/AksEdge-K3s-1.26.6-1.4.109.0.msi",
     "Azure": {
         "SubscriptionId": "$env:subscriptionId",
         "TenantId": "$env:tenantId",
@@ -57,43 +57,10 @@ $aideuserConfig = @"
 }
 "@
 
-if ($env:windowsNode -eq $true) {
-    $aksedgeConfig = @"
+$aksedgeConfig = @"
 {
-    "SchemaVersion": "$schemaVersionAksEdgeConfig",
-    "Version": "$versionAksEdgeConfig",
-    "DeploymentType": "SingleMachineCluster",
-    "Init": {
-        "ServiceIPRangeSize": 0
-    },
-    "Network": {
-        "NetworkPlugin": "$networkplugin",
-        "InternetDisabled": false
-    },
-    "User": {
-        "AcceptEula": true,
-        "AcceptOptionalTelemetry": true
-    },
-    "Machines": [
-        {
-            "LinuxNode": {
-                "CpuCount": 8,
-                "MemoryInMB": 16384,
-                "DataSizeInGB": 30
-            },
-            "WindowsNode": {
-                "CpuCount": 2,
-                "MemoryInMB": 4096
-            }
-        }
-    ]
-}
-"@
-} else {
-    $aksedgeConfig = @"
-{
-    "SchemaVersion": "$schemaVersionAksEdgeConfig",
-    "Version": "$versionAksEdgeConfig",
+    "SchemaVersion": "1.9",
+    "Version": "1.0",
     "DeploymentType": "SingleMachineCluster",
     "Init": {
         "ServiceIPRangeSize": 10
@@ -109,15 +76,15 @@ if ($env:windowsNode -eq $true) {
     "Machines": [
         {
             "LinuxNode": {
-                "CpuCount": 8,
-                "MemoryInMB": 16384,
-                "DataSizeInGB": 30
+                "CpuCount": 4,
+                "MemoryInMB": 10240,
+                "DataSizeInGB": 40,
+                "LogSizeInGB": 2
             }
         }
     ]
 }
 "@
-}
 
 Set-ExecutionPolicy Bypass -Scope Process -Force
 # Download the AksEdgeDeploy modules from Azure/AksEdge
