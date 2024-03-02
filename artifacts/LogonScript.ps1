@@ -50,7 +50,7 @@ $aideuserConfig = @"
     "SchemaVersion": "$AksEdgeRemoteDeployVersion",
     "Version": "$schemaVersion",
     "AksEdgeProduct": "$productName",
-    "AksEdgeProductUrl": $K3SMsi,
+    "AksEdgeProductUrl": "$K3SMsi",
     "Azure": {
         "SubscriptionId": "$env:subscriptionId",
         "TenantId": "$env:tenantId",
