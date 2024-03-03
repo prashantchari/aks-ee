@@ -80,7 +80,7 @@ $aksedgeConfig = @"
                 "CpuCount": 4,
                 "MemoryInMB": 10240,
                 "DataSizeInGB": 40,
-                "LogSizeInGB": 2
+                "LogSizeInGB": 4
             }
         }
     ]
