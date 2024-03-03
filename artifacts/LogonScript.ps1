@@ -40,9 +40,6 @@ $schemaVersionAksEdgeConfig = $jsonContent.SchemaVersion
 Remove-Item -Path $output -Force
 Remove-Item -Path "C:\temp\AKS-Edge-$latestReleaseTag" -Force -Recurse
 
-$K3SUrl = "https://download.microsoft.com/download/3/d/7/3d7b3eea-51c2-4a2c-8405-28e40191e715/AksEdge-K3s-1.26.10-1.6.384.0.msi"
-$K3SMsi = Join-Path "C:\temp" "k3s.msi"
-Invoke-WebRequest $K3SUrl -OutFile $K3SMsi -UseBasicParsing
 
 # Here string for the json content
 $aideuserConfig = @"
@@ -50,7 +47,7 @@ $aideuserConfig = @"
     "SchemaVersion": "$AksEdgeRemoteDeployVersion",
     "Version": "$schemaVersion",
     "AksEdgeProduct": "$productName",
-    "AksEdgeProductUrl": "$K3SMsi",
+    "AksEdgeProductUrl": "https://download.microsoft.com/download/3/d/7/3d7b3eea-51c2-4a2c-8405-28e40191e715/AksEdge-K3s-1.26.10-1.6.384.0.msi",
     "Azure": {
         "SubscriptionId": "$env:subscriptionId",
         "TenantId": "$env:tenantId",
