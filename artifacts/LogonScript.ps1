@@ -269,21 +269,19 @@ az provider register --namespace Microsoft.ExtendedLocation --wait
 Write-Host "Onboarding the AKS Edge Essentials cluster to Azure Arc..."
 Write-Host "`n"
 
-$Env:arcClusterName = "$Env:clusterName"
-
 # https://github.com/Azure/azure-cli-extensions/issues/6637
 Invoke-WebRequest -Uri https://secure.globalsign.net/cacert/Root-R1.crt -OutFile c:\globalsignR1.crt
 Import-Certificate -FilePath c:\globalsignR1.crt -CertStoreLocation Cert:\LocalMachine\Root
 
 if ($env:kubernetesDistribution -eq "k8s") {
-    az connectedk8s connect --name $Env:arcClusterName `
+    az connectedk8s connect --name $Env:clusterName `
     --resource-group $Env:resourceGroup `
     --location $env:location `
     --custom-locations-oid 51dfe1e8-70c6-4de5-a08e-e18aff23d815 `
     --onboarding-timeout 1200 `
     --distribution aks_edge_k8s | Write-Host
 } else {
-    az connectedk8s connect --name $Env:arcClusterName `
+    az connectedk8s connect --name $Env:clusterName `
     --resource-group $Env:resourceGroup `
     --location $env:location `
     --custom-locations-oid 51dfe1e8-70c6-4de5-a08e-e18aff23d815 `
@@ -292,16 +290,16 @@ if ($env:kubernetesDistribution -eq "k8s") {
 }
 
 # enable features
-az connectedk8s enable-features --name $Env:arcClusterName --resource-group $Env:resourceGroup --features cluster-connect custom-locations --custom-locations-oid 51dfe1e8-70c6-4de5-a08e-e18aff23d815
+az connectedk8s enable-features --name $Env:clusterName --resource-group $Env:resourceGroup --features cluster-connect custom-locations --custom-locations-oid 51dfe1e8-70c6-4de5-a08e-e18aff23d815 | Write-Host
 
 # Create admin service account and write token to key vault
 # The secret name must be a 1-127 character string, starting with a letter and containing only 0-9, a-z, A-Z, and -.
 Write-Host "Creating admin credentials"
 kubectl apply -f https://raw.githubusercontent.com/prashantchari/public/main/arc-admin.yaml
-$uniqueSecretName = "$Env:arcClusterName-$Env:resourceGroup-$Env:subscriptionId"
+$uniqueSecretName = "$Env:clusterName-$Env:resourceGroup-$Env:subscriptionId"
 $token = kubectl get secret arc-admin-secret -n kube-system -o jsonpath='{.data.token}' | %{[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($_))}
 Write-Host "Writing token to key vault"
-az keyvault secret set --vault-name $Env:proxyCredentialsKeyVaultName --name $uniqueSecretName --value $token
+az keyvault secret set --vault-name $Env:proxyCredentialsKeyVaultName --name $uniqueSecretName --value $token | Write-Host
 
 Stop-Transcript
 exit 0
