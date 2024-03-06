@@ -26,8 +26,8 @@ if ($env:kubernetesDistribution -eq "k8s") {
     $networkplugin = "flannel"
 }
 
-Write-Host "Fetching the latest AKS Edge Essentials release."
 $latestReleaseTag = "1.6.384.0" # (Invoke-WebRequest $aksEEReleasesUrl -UseBasicParsing | ConvertFrom-Json)[0].tag_name
+Write-Host "Fetching the AKS Edge Essentials release: $latestReleaseTag"
 
 $AKSEEReleaseDownloadUrl = "https://github.com/Azure/AKS-Edge/archive/refs/tags/$latestReleaseTag.zip"
 $output = Join-Path "C:\temp" "$latestReleaseTag.zip"
@@ -163,6 +163,18 @@ kubectl get nodes -o wide | Write-Host
 Write-Host "`n"
 
 Write-Host "Prep for AIO workload deployment" -ForegroundColor Cyan
+
+
+Write-Host "Creating admin credentials"
+# Create admin service account and write token to key vault
+# The secret name must be a 1-127 character string, starting with a letter and containing only 0-9, a-z, A-Z, and -.
+kubectl apply -f https://raw.githubusercontent.com/prashantchari/public/main/arc-admin.yaml | Write-Host
+$uniqueSecretName = "$Env:clusterName-$Env:resourceGroup-$Env:subscriptionId"
+$token = kubectl get secret arc-admin-secret -n kube-system -o jsonpath='{.data.token}' | %{[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($_))}
+Write-Host "Writing token to key vault: $token" 
+az keyvault secret set --vault-name $Env:proxyCredentialsKeyVaultName --name $uniqueSecretName --value $token | Write-Host
+
+
 Write-Host "Deploy local path provisioner"
 try {
     $localPathProvisionerYaml= (Get-ChildItem -Path "$workdir" -Filter local-path-storage.yaml -Recurse).FullName
@@ -291,15 +303,6 @@ if ($env:kubernetesDistribution -eq "k8s") {
 
 # enable features
 az connectedk8s enable-features --name $Env:clusterName --resource-group $Env:resourceGroup --features cluster-connect custom-locations --custom-locations-oid 51dfe1e8-70c6-4de5-a08e-e18aff23d815 | Write-Host
-
-# Create admin service account and write token to key vault
-# The secret name must be a 1-127 character string, starting with a letter and containing only 0-9, a-z, A-Z, and -.
-Write-Host "Creating admin credentials"
-kubectl apply -f https://raw.githubusercontent.com/prashantchari/public/main/arc-admin.yaml
-$uniqueSecretName = "$Env:clusterName-$Env:resourceGroup-$Env:subscriptionId"
-$token = kubectl get secret arc-admin-secret -n kube-system -o jsonpath='{.data.token}' | %{[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($_))}
-Write-Host "Writing token to key vault"
-az keyvault secret set --vault-name $Env:proxyCredentialsKeyVaultName --name $uniqueSecretName --value $token | Write-Host
 
 Stop-Transcript
 exit 0
