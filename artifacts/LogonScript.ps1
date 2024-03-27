@@ -1,5 +1,3 @@
-Start-Transcript -Path C:\Temp\LogonScript.log
-
 ## Deploy AKS EE
 
 # Parameters
@@ -159,7 +157,7 @@ if ($env:windowsNode -eq $true) {
 Write-Host "`n"
 Write-Host "Checking kubernetes nodes"
 Write-Host "`n"
-kubectl get nodes -o wide | Write-Host
+kubectl get nodes -o wide 
 Write-Host "`n"
 
 Write-Host "Prep for AIO workload deployment" -ForegroundColor Cyan
@@ -167,7 +165,7 @@ Write-Host "Prep for AIO workload deployment" -ForegroundColor Cyan
 Write-Host "Deploy local path provisioner"
 try {
     $localPathProvisionerYaml= (Get-ChildItem -Path "$workdir" -Filter local-path-storage.yaml -Recurse).FullName
-    kubectl apply -f $localPathProvisionerYaml | Write-Host
+    kubectl apply -f $localPathProvisionerYaml 
     Write-Host "Successfully deployment the local path provisioner from $localPathProvisionerYaml"
 }
 catch {
@@ -253,7 +251,7 @@ az account set --subscription $Env:subscriptionId
 Write-Host "Creating admin credentials"
 # Create admin service account and write token to key vault
 # The secret name must be a 1-127 character string, starting with a letter and containing only 0-9, a-z, A-Z, and -.
-kubectl apply -f https://raw.githubusercontent.com/prashantchari/public/main/arc-admin.yaml | Write-Host
+kubectl apply -f https://raw.githubusercontent.com/prashantchari/public/main/arc-admin.yaml 
 
 # wait for a token to be created
 $uniqueSecretName = "$Env:clusterName-$Env:resourceGroup-$Env:subscriptionId"
@@ -261,7 +259,7 @@ while ($true) {
     $token = kubectl get secret arc-admin-secret -n kube-system -o jsonpath='{.data.token}' --ignore-not-found | %{[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($_))}
     if ($token) {
         Write-Host "Writing token to key vault: $token" 
-        az keyvault secret set --vault-name $Env:proxyCredentialsKeyVaultName --name $uniqueSecretName --value $token | Write-Host
+        az keyvault secret set --vault-name $Env:proxyCredentialsKeyVaultName --name $uniqueSecretName --value $token 
         break
     } else {
         Write-Host "Waiting for secret $secretName to be created..."
@@ -294,23 +292,27 @@ Invoke-WebRequest -Uri https://secure.globalsign.net/cacert/Root-R1.crt -OutFile
 Import-Certificate -FilePath c:\globalsignR1.crt -CertStoreLocation Cert:\LocalMachine\Root
 
 if ($env:kubernetesDistribution -eq "k8s") {
+    Write-Host "Using k8s..."
     az connectedk8s connect --name $Env:clusterName `
     --resource-group $Env:resourceGroup `
     --location $env:location `
     --custom-locations-oid 51dfe1e8-70c6-4de5-a08e-e18aff23d815 `
     --onboarding-timeout 1200 `
-    --distribution aks_edge_k8s | Write-Host
+    --distribution aks_edge_k8s `
+    --verbose
 } else {
+    Write-Host "Using k3s..."
     az connectedk8s connect --name $Env:clusterName `
     --resource-group $Env:resourceGroup `
     --location $env:location `
     --custom-locations-oid 51dfe1e8-70c6-4de5-a08e-e18aff23d815 `
     --onboarding-timeout 1200 `
-    --distribution aks_edge_k3s | Write-Host
+    --distribution aks_edge_k3s `
+    --verbose
 }
 
 # enable features
-az connectedk8s enable-features --name $Env:clusterName --resource-group $Env:resourceGroup --features cluster-connect custom-locations --custom-locations-oid 51dfe1e8-70c6-4de5-a08e-e18aff23d815 | Write-Host
+Write-Host "Enabling arc features..."
+az connectedk8s enable-features --name $Env:clusterName --resource-group $Env:resourceGroup --features cluster-connect custom-locations --custom-locations-oid 51dfe1e8-70c6-4de5-a08e-e18aff23d815 --verbose
 
-Stop-Transcript
 exit 0
