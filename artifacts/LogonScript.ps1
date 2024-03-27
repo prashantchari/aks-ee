@@ -109,7 +109,6 @@ try {
 }
 catch {
     Write-Host "Error: Downloading Aide Powershell Modules failed" -ForegroundColor Red
-    Stop-Transcript | Out-Null
     Pop-Location
     exit -1
 }
@@ -135,7 +134,6 @@ if ($retval) {
     Write-Host "Deployment Successful. "
 } else {
     Write-Error -Message "Deployment failed" -Category OperationStopped
-    Stop-Transcript | Out-Null
     Pop-Location
     exit -1
 }
@@ -170,7 +168,6 @@ try {
 }
 catch {
     Write-Host "Error: local path provisioner deployment failed" -ForegroundColor Red
-    Stop-Transcript | Out-Null
     Pop-Location
     exit -1 
 }
@@ -188,7 +185,6 @@ try {
 }
 catch {
     Write-Host "Error: Firewall rule addition for AIO MQTT broker failed" -ForegroundColor Red
-    Stop-Transcript | Out-Null
     Pop-Location
     exit -1 
 }
@@ -209,7 +205,6 @@ try {
 }
 catch {
     Write-Host "Error: port proxy update for AIO failed" -ForegroundColor Red
-    Stop-Transcript | Out-Null
     Pop-Location
     exit -1 
 }
@@ -229,7 +224,6 @@ try {
 }
 catch {
     Write-Host "Error: iptable rule update failed" -ForegroundColor Red
-    Stop-Transcript | Out-Null
     Pop-Location
     exit -1 
 }
