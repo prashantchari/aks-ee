@@ -317,10 +317,10 @@ while ((Get-Date) -lt $endTime -and $arcEnabled -ne 'Succeeded') {
         --distribution aks_edge_k3s | Write-Host
     }
 
-    $arcEnabled = az connectedk8s show --name $(CLUSTER_NAME) --resource-group $(ARC_RESOURCE_GROUP) --query "provisioningState" --only-show-errors -o tsv 2> null
+    $arcEnabled = az connectedk8s show --name $Env:clusterName --resource-group $Env:resourceGroup --query "provisioningState" --only-show-errors -o tsv 2> null
     if ($arcEnabled -ne 'Succeeded') {
         Write-Host "Writing arc enablement troubleshoot logs"
-        az connectedk8s troubleshoot  --name $(CLUSTER_NAME) --resource-group $(ARC_RESOURCE_GROUP)
+        az connectedk8s troubleshoot  --name $Env:clusterName --resource-group $Env:resourceGroup
     }
     Start-Sleep -Seconds 30
 }
