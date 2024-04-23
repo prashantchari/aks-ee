@@ -293,20 +293,44 @@ Write-Host "`n"
 Invoke-WebRequest -Uri https://secure.globalsign.net/cacert/Root-R1.crt -OutFile c:\globalsignR1.crt
 Import-Certificate -FilePath c:\globalsignR1.crt -CertStoreLocation Cert:\LocalMachine\Root
 
-if ($env:kubernetesDistribution -eq "k8s") {
-    az connectedk8s connect --name $Env:clusterName `
-    --resource-group $Env:resourceGroup `
-    --location $env:location `
-    --custom-locations-oid 51dfe1e8-70c6-4de5-a08e-e18aff23d815 `
-    --onboarding-timeout 1200 `
-    --distribution aks_edge_k8s | Write-Host
-} else {
-    az connectedk8s connect --name $Env:clusterName `
-    --resource-group $Env:resourceGroup `
-    --location $env:location `
-    --custom-locations-oid 51dfe1e8-70c6-4de5-a08e-e18aff23d815 `
-    --onboarding-timeout 1200 `
-    --distribution aks_edge_k3s | Write-Host
+$timeout = 900
+$startTime = Get-Date
+$endTime = $startTime.AddSeconds($timeout)
+$arcEnabled = ' '
+
+
+while ((Get-Date) -lt $endTime -and $arcEnabled -ne 'Succeeded') {
+
+    if ($env:kubernetesDistribution -eq "k8s") {
+        az connectedk8s connect --name $Env:clusterName `
+        --resource-group $Env:resourceGroup `
+        --location $env:location `
+        --custom-locations-oid 51dfe1e8-70c6-4de5-a08e-e18aff23d815 `
+        --onboarding-timeout 1200 `
+        --distribution aks_edge_k8s | Write-Host
+    } else {
+        az connectedk8s connect --name $Env:clusterName `
+        --resource-group $Env:resourceGroup `
+        --location $env:location `
+        --custom-locations-oid 51dfe1e8-70c6-4de5-a08e-e18aff23d815 `
+        --onboarding-timeout 1200 `
+        --distribution aks_edge_k3s | Write-Host
+    }
+
+    $arcEnabled = az connectedk8s show --name $(CLUSTER_NAME) --resource-group $(ARC_RESOURCE_GROUP) --query "provisioningState" --only-show-errors -o tsv 2> null
+    if ($arcEnabled -ne 'Succeeded') {
+        Write-Host "Writing arc enablement troubleshoot logs"
+        az connectedk8s troubleshoot  --name $(CLUSTER_NAME) --resource-group $(ARC_RESOURCE_GROUP)
+    }
+    Start-Sleep -Seconds 30
+}
+
+if ($arcEnabled -eq 'Succeeded') {
+    Write-Host "Cluster is Arc-enabled"
+}
+else {
+    Write-Host "Timeout reached, cluster is not Arc-enabled"
+    exit 1
 }
 
 # enable features
