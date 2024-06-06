@@ -1,26 +1,26 @@
 param (
     [string]$adminUsername,
-    [string]$appId,
-    [string]$password,
-    [string]$tenantId,
-    [string]$subscriptionId,
-    [string]$location,
+    [string]$arcAppId,
+    [string]$arcFederatedToken,
+    [string]$arcTenantId,
+    [string]$arcSubscriptionId,
+    [string]$arcLocation,
     [string]$templateBaseUrl,
     [string]$clusterName,
-    [string]$resourceGroup,
+    [string]$arcResourceGroup,
     [string]$windowsNode,
     [string]$kubernetesDistribution,
     [string]$proxyCredentialsKeyVaultName
 )
 
 [System.Environment]::SetEnvironmentVariable('adminUsername', $adminUsername,[System.EnvironmentVariableTarget]::Machine)
-[System.Environment]::SetEnvironmentVariable('appId', $appId,[System.EnvironmentVariableTarget]::Machine)
-[System.Environment]::SetEnvironmentVariable('password', $password,[System.EnvironmentVariableTarget]::Machine)
-[System.Environment]::SetEnvironmentVariable('tenantId', $tenantId,[System.EnvironmentVariableTarget]::Machine)
+[System.Environment]::SetEnvironmentVariable('arcAppId', $arcAppId,[System.EnvironmentVariableTarget]::Machine)
+[System.Environment]::SetEnvironmentVariable('arcFederatedToken', $arcFederatedToken,[System.EnvironmentVariableTarget]::Machine)
+[System.Environment]::SetEnvironmentVariable('arcTenantId', $arcTenantId,[System.EnvironmentVariableTarget]::Machine)
 [System.Environment]::SetEnvironmentVariable('clusterName', $clusterName,[System.EnvironmentVariableTarget]::Machine)
-[System.Environment]::SetEnvironmentVariable('resourceGroup', $resourceGroup,[System.EnvironmentVariableTarget]::Machine)
-[System.Environment]::SetEnvironmentVariable('location', $location,[System.EnvironmentVariableTarget]::Machine)
-[System.Environment]::SetEnvironmentVariable('subscriptionId', $subscriptionId,[System.EnvironmentVariableTarget]::Machine)
+[System.Environment]::SetEnvironmentVariable('arcResourceGroup', $arcResourceGroup,[System.EnvironmentVariableTarget]::Machine)
+[System.Environment]::SetEnvironmentVariable('arcLocation', $arcLocation,[System.EnvironmentVariableTarget]::Machine)
+[System.Environment]::SetEnvironmentVariable('arcSubscriptionId', $arcSubscriptionId,[System.EnvironmentVariableTarget]::Machine)
 [System.Environment]::SetEnvironmentVariable('templateBaseUrl', $templateBaseUrl,[System.EnvironmentVariableTarget]::Machine)
 [System.Environment]::SetEnvironmentVariable('kubernetesDistribution', $kubernetesDistribution,[System.EnvironmentVariableTarget]::Machine)
 [System.Environment]::SetEnvironmentVariable('windowsNode', $windowsNode,[System.EnvironmentVariableTarget]::Machine)
