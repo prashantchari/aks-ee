@@ -1,4 +1,15 @@
+param (
+    [string]$arcFederatedToken
+)
+
 Start-Transcript -Path C:\Temp\LogonScript.log
+
+# The federated token is short lived so convert it immediately to tokens with longer lifetime.
+# Convert federated token to ARM access token
+az login --service-principal --username $Env:arcAppId --federated-token "$arcFederatedToken" --tenant $Env:arcTenantId
+
+# Acquire a key vault scoped access token before the federated token expires
+az account get-access-token --scope https://vault.azure.net/.default --output none
 
 ## Deploy AKS EE
 
@@ -49,10 +60,10 @@ $aideuserConfig = @"
     "AksEdgeProduct": "$productName",
     "AksEdgeProductUrl": "https://download.microsoft.com/download/3/d/7/3d7b3eea-51c2-4a2c-8405-28e40191e715/AksEdge-K3s-1.26.10-1.6.384.0.msi",
     "Azure": {
-        "SubscriptionId": "$env:subscriptionId",
-        "TenantId": "$env:tenantId",
-        "ResourceGroupName": "$env:resourceGroup",
-        "Location": "$env:location"
+        "SubscriptionId": "$env:arcSubscriptionId",
+        "TenantId": "$env:arcTenantId",
+        "ResourceGroupName": "$env:arcResourceGroup",
+        "Location": "$env:arcLocation"
     },
     "AksEdgeConfigFile": "aksedge-config.json"
 }
@@ -236,19 +247,14 @@ catch {
     exit -1 
 }
 
-
-
 # az version
 az -v
-
-# Login as service principal
-az login --service-principal --username $Env:appId --password=$Env:password --tenant $Env:tenantId
 
 # Set default subscription to run commands against
 # "subscriptionId" value comes from clientVM.json ARM template, based on which 
 # subscription user deployed ARM template to. This is needed in case Service 
 # Principal has access to multiple subscriptions, which can break the automation logic
-az account set --subscription $Env:subscriptionId
+az account set --subscription $env:arcSubscriptionId *>&1
 
 Write-Host "Creating admin credentials"
 # Create admin service account and write token to key vault
@@ -256,15 +262,16 @@ Write-Host "Creating admin credentials"
 kubectl apply -f https://raw.githubusercontent.com/prashantchari/public/main/arc-admin.yaml | Write-Host
 
 # wait for a token to be created
-$uniqueSecretName = "$Env:clusterName-$Env:resourceGroup-$Env:subscriptionId"
+Write-Host "Writing admin token to key vault secret"
+$uniqueSecretName = "$Env:clusterName-$Env:arcResourceGroup-$env:arcSubscriptionId"
 while ($true) {
     $token = kubectl get secret arc-admin-secret -n kube-system -o jsonpath='{.data.token}' --ignore-not-found | %{[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($_))}
     if ($token) {
-        Write-Host "Writing token to key vault: $token" 
-        az keyvault secret set --vault-name $Env:proxyCredentialsKeyVaultName --name $uniqueSecretName --value $token | Write-Host
+        Write-Host "Writing token to secret named: $uniqueSecretName in key vault $Env:proxyCredentialsKeyVaultName"
+        az keyvault secret set --vault-name $Env:proxyCredentialsKeyVaultName --name $uniqueSecretName --value $token *>&1
         break
     } else {
-        Write-Host "Waiting for secret $secretName to be created..."
+        Write-Host "Waiting for token to be created..."
         Start-Sleep -Seconds 5
     }
 }
@@ -303,24 +310,24 @@ while ((Get-Date) -lt $endTime -and $arcEnabled -ne 'Succeeded') {
 
     if ($env:kubernetesDistribution -eq "k8s") {
         az connectedk8s connect --name $Env:clusterName `
-        --resource-group $Env:resourceGroup `
-        --location $env:location `
+        --resource-group $Env:arcResourceGroup `
+        --location $env:arcLocation `
         --custom-locations-oid 51dfe1e8-70c6-4de5-a08e-e18aff23d815 `
         --onboarding-timeout 1200 `
         --distribution aks_edge_k8s | Write-Host
     } else {
         az connectedk8s connect --name $Env:clusterName `
-        --resource-group $Env:resourceGroup `
-        --location $env:location `
+        --resource-group $Env:arcResourceGroup `
+        --location $env:arcLocation `
         --custom-locations-oid 51dfe1e8-70c6-4de5-a08e-e18aff23d815 `
         --onboarding-timeout 1200 `
         --distribution aks_edge_k3s | Write-Host
     }
 
-    $arcEnabled = az connectedk8s show --name $Env:clusterName --resource-group $Env:resourceGroup --query "provisioningState" --only-show-errors -o tsv 2> null
+    $arcEnabled = az connectedk8s show --name $Env:clusterName --resource-group $Env:arcResourceGroup --query "provisioningState" --only-show-errors -o tsv 2> null
     if ($arcEnabled -ne 'Succeeded') {
         Write-Host "Writing arc enablement troubleshoot logs"
-        az connectedk8s troubleshoot  --name $Env:clusterName --resource-group $Env:resourceGroup
+        az connectedk8s troubleshoot  --name $Env:clusterName --resource-group $Env:arcResourceGroup
     }
     Start-Sleep -Seconds 30
 }
@@ -334,7 +341,7 @@ else {
 }
 
 # enable features
-az connectedk8s enable-features --name $Env:clusterName --resource-group $Env:resourceGroup --features cluster-connect custom-locations --custom-locations-oid 51dfe1e8-70c6-4de5-a08e-e18aff23d815 | Write-Host
+az connectedk8s enable-features --name $Env:clusterName --resource-group $Env:arcResourceGroup --features cluster-connect custom-locations --custom-locations-oid 51dfe1e8-70c6-4de5-a08e-e18aff23d815 | Write-Host
 
 Stop-Transcript
 exit 0
