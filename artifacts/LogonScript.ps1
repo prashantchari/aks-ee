@@ -37,7 +37,7 @@ if ($env:kubernetesDistribution -eq "k8s") {
     $networkplugin = "flannel"
 }
 
-$latestReleaseTag = "1.6.384.0" # (Invoke-WebRequest $aksEEReleasesUrl -UseBasicParsing | ConvertFrom-Json)[0].tag_name
+$latestReleaseTag = "1.7.639.0" # (Invoke-WebRequest $aksEEReleasesUrl -UseBasicParsing | ConvertFrom-Json)[0].tag_name
 Write-Host "Fetching the AKS Edge Essentials release: $latestReleaseTag"
 
 $AKSEEReleaseDownloadUrl = "https://github.com/Azure/AKS-Edge/archive/refs/tags/$latestReleaseTag.zip"
@@ -58,7 +58,7 @@ $aideuserConfig = @"
     "SchemaVersion": "$AksEdgeRemoteDeployVersion",
     "Version": "$schemaVersion",
     "AksEdgeProduct": "$productName",
-    "AksEdgeProductUrl": "https://download.microsoft.com/download/3/d/7/3d7b3eea-51c2-4a2c-8405-28e40191e715/AksEdge-K3s-1.26.10-1.6.384.0.msi",
+    "AksEdgeProductUrl": "https://download.microsoft.com/download/9/d/b/9db70435-27fc-4feb-8792-04444d585526/AksEdge-K3s-1.28.3-1.7.639.0.msi",
     "Azure": {
         "SubscriptionId": "$env:arcSubscriptionId",
         "TenantId": "$env:arcTenantId",
