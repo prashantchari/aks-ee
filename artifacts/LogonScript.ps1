@@ -1,5 +1,6 @@
 param (
-    [string]$arcFederatedToken
+    [string]$arcFederatedToken,
+    [string]$msiUrl
 )
 
 Start-Transcript -Path C:\Temp\LogonScript.log
@@ -10,6 +11,16 @@ az login --service-principal --username $Env:arcAppId --federated-token "$arcFed
 
 # Acquire a key vault scoped access token before the federated token expires
 az account get-access-token --scope https://vault.azure.net/.default --output none
+
+# Download MSI when msiUrl is specified
+if ($msiUrl){
+    Write-Host "MSI URL: $msiUrl"
+    $msiFileName = Split-Path $msiUrl -Leaf
+    $msiLocalDir = "C:\Users\Public\Downloads"
+    $msiLocalPath = Join-Path -Path $msiLocalDir -ChildPath $msiFileName
+    azcopy copy $msiUrl $msiLocalPath
+    Write-Host "MSI Local File Path: $msiLocalPath"
+}
 
 ## Deploy AKS EE
 
@@ -51,14 +62,20 @@ $schemaVersionAksEdgeConfig = $jsonContent.SchemaVersion
 Remove-Item -Path $output -Force
 Remove-Item -Path "C:\temp\AKS-Edge-$latestReleaseTag" -Force -Recurse
 
-
+# MSI avaliable locally ?
+if ( $msiUrl ){
+    $productUrl = $msiLocalPath.replace('\','\\')
+}  else {
+    $productUrl = "https://download.microsoft.com/download/9/d/b/9db70435-27fc-4feb-8792-04444d585526/AksEdge-K3s-1.28.3-1.7.639.0.msi"
+}
+Write-Host "Product Url: $productUrl"
 # Here string for the json content
 $aideuserConfig = @"
 {
     "SchemaVersion": "$AksEdgeRemoteDeployVersion",
     "Version": "$schemaVersion",
     "AksEdgeProduct": "$productName",
-    "AksEdgeProductUrl": "https://download.microsoft.com/download/9/d/b/9db70435-27fc-4feb-8792-04444d585526/AksEdge-K3s-1.28.3-1.7.639.0.msi",
+    "AksEdgeProductUrl": "$productUrl",
     "Azure": {
         "SubscriptionId": "$env:arcSubscriptionId",
         "TenantId": "$env:arcTenantId",
@@ -97,6 +114,9 @@ $aksedgeConfig = @"
     ]
 }
 "@
+
+Write-Host "aide-config:"
+Write-host "$aideuserConfig"
 
 Set-ExecutionPolicy Bypass -Scope Process -Force
 # Download the AksEdgeDeploy modules from Azure/AksEdge

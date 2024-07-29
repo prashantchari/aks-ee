@@ -10,6 +10,7 @@ param (
     [string]$arcResourceGroup,
     [string]$windowsNode,
     [string]$kubernetesDistribution,
+    [string]$uamiClientId,
     [string]$proxyCredentialsKeyVaultName
 )
 
@@ -25,6 +26,11 @@ param (
 [System.Environment]::SetEnvironmentVariable('kubernetesDistribution', $kubernetesDistribution,[System.EnvironmentVariableTarget]::Machine)
 [System.Environment]::SetEnvironmentVariable('windowsNode', $windowsNode,[System.EnvironmentVariableTarget]::Machine)
 [System.Environment]::SetEnvironmentVariable('proxyCredentialsKeyVaultName', $proxyCredentialsKeyVaultName,[System.EnvironmentVariableTarget]::Machine)
+
+if ($uamiClientId){
+    [System.Environment]::SetEnvironmentVariable('AZCOPY_AUTO_LOGIN_TYPE', "MSI",[System.EnvironmentVariableTarget]::Machine)
+    [System.Environment]::SetEnvironmentVariable('AZCOPY_MSI_CLIENT_ID', $uamiClientId,[System.EnvironmentVariableTarget]::Machine)
+}
 
 # Create path
 Write-Output "Create deployment path"
@@ -42,7 +48,7 @@ Invoke-WebRequest "https://raw.githubusercontent.com/Azure/arc_jumpstart_docs/ma
 # Installing tools
 workflow ClientTools_01
         {
-            $chocolateyAppList = 'azure-cli,az.powershell,kubernetes-cli,kubernetes-helm'
+            $chocolateyAppList = 'azure-cli,azcopy10,az.powershell,kubernetes-cli,kubernetes-helm'
             #Run commands in parallel.
             Parallel 
                 {
@@ -107,6 +113,7 @@ New-ItemProperty -Path $RegistryPath -Name $Name -Value $Value -PropertyType DWO
 
 # Disabling Windows Server Manager Scheduled Task
 Get-ScheduledTask -TaskName ServerManager | Disable-ScheduledTask
+
 
 # Clean up Bootstrap.log
 Stop-Transcript
