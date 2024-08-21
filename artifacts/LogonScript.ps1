@@ -1,7 +1,7 @@
 param (
     [string]$arcFederatedToken,
     [string]$msiUrl,
-    [bool]$useArcPreviewBuild
+    [bool]$useArcPreviewBuild = $false
 )
 
 Start-Transcript -Path C:\Temp\LogonScript.log
