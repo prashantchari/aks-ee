@@ -326,7 +326,7 @@ $startTime = Get-Date
 $endTime = $startTime.AddSeconds($timeout)
 $arcEnabled = ' '
 
-if ($useArcPreviewBuild -eq "true") {
+if ($useArcPreviewBuild -eq $true) {
     $response = Invoke-RestMethod -Method Post -Uri "https://eastus2euap.dp.kubernetesconfiguration.azure.com/azure-arc-k8sagents/GetLatestHelmPackagePath?api-version=2019-11-01-preview&releaseTrain=preview"
     $env:HELMREGISTRY = $response.repositoryPath        
 }
