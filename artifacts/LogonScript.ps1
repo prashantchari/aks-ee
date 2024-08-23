@@ -327,7 +327,12 @@ $arcEnabled = ' '
 
 if ($env:USE_ARC_PREVIEW_BUILD -eq "True") {
     $response = Invoke-RestMethod -Method Post -Uri "https://eastus2euap.dp.kubernetesconfiguration.azure.com/azure-arc-k8sagents/GetLatestHelmPackagePath?api-version=2019-11-01-preview&releaseTrain=preview"
-    $env:HELMREGISTRY = $response.repositoryPath        
+    # Set the HELMREGISTRY environment variable globally
+    [Environment]::SetEnvironmentVariable('HELMREGISTRY', $response.repositoryPath, 'Machine')
+    
+    # Verify it's set correctly
+    $env:HELMREGISTRY = [Environment]::GetEnvironmentVariable('HELMREGISTRY', 'Machine')
+    Write-Host "HELMREGISTRY is set globally to: $env:HELMREGISTRY"     
 }
 
 while ((Get-Date) -lt $endTime -and $arcEnabled -ne 'Succeeded') {
