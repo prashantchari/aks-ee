@@ -1,3 +1,8 @@
+param (
+    [string]$arcFederatedToken,
+    [string]$msiUrl
+)
+
 $SubscriptionId = $env:arcSubscriptionId
 $TenantId = $env:arcTenantId
 $Location = $env:arcLocation
