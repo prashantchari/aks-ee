@@ -3,6 +3,96 @@ param (
     [string]$msiUrl
 )
 
+$SubscriptionId = $env:arcSubscriptionId
+$TenantId = $env:arcTenantId
+$Location = $env:arcLocation
+$ResourceGroupName = $env:arcResourceGroupName
+$ClusterName = $Env:clusterName
+$CustomLocationOid = "51dfe1e8-70c6-4de5-a08e-e18aff23d815"
+# TODO: shold we set Tag as constant?
+$Tag = "1.7.639.0"
+$UseK8s=$false
+
+#Requires -RunAsAdministrator
+
+function Verify-ConnectedStatus
+{
+param(
+    [Parameter(Mandatory=$true)]
+    [object] $arcArgs,
+    [Parameter(Mandatory=$true)]
+    [string] $clusterName
+)
+
+    $k8sConnectArgs = @("-g", $arcArgs.ResourceGroupName)
+    $k8sConnectArgs += @("-n", $clusterName)
+    $k8sConnectArgs += @("--subscription", $arcArgs.SubscriptionId)
+
+    # 15 min timeout to check for Connected status - as recommended by Arc team
+    $retries = 90
+    $sleepDurationInSeconds = 10
+    for (; $retries -gt 0; $retries--)
+    {
+        $connectedCluster = az connectedk8s show $k8sConnectArgs | ConvertFrom-Json
+        if ($connectedCluster.ConnectivityStatus -eq "Connected")
+        {
+            Write-Host "Cluster reached connected status"
+            break
+        }
+
+        Write-Host "Arc connection status is $($connectedCluster.ConnectivityStatus). Waiting for status to be connected..."
+        Start-Sleep -Seconds $sleepDurationInSeconds
+    }
+
+    if ($retries -eq 0)
+    {
+        throw "Arc Connection timed out!"
+    }
+}
+
+function New-ConnectedCluster
+{
+param(
+    [Parameter(Mandatory=$true)]
+    [object] $arcArgs,
+    [Parameter(Mandatory=$true)]
+    [string] $clusterName,
+    [Switch] $useK8s=$false
+)
+
+    Write-Host "New-ConnectedCluster"
+
+    $tags = @("SKU=AKSEdgeEssentials")
+    $aksEdgeVersion = (Get-Module -Name AksEdge).Version.ToString()
+    if ($aksEdgeVersion) {
+        $tags += @("AKSEE Version=$aksEdgeVersion")
+    }
+    $infra = Get-AideInfra
+    if ($infra) { 
+        $tags += @("Host Infra=$infra")
+    }
+    $clusterid = $(kubectl get configmap -n aksedge aksedge -o jsonpath="{.data.clustername}")
+    if ($clusterid) { 
+        $tags += @("ClusterId=$clusterid")
+    }
+
+    $k8sConnectArgs = @("-g", $arcArgs.ResourceGroupName)
+    $k8sConnectArgs += @("-n", $clusterName)
+    $k8sConnectArgs += @("-l", $arcArgs.Location)
+    $k8sConnectArgs += @("--subscription", $arcArgs.SubscriptionId)
+    $k8sConnectArgs += @("--tags", $tags)
+
+    Write-Host "Connect cmd args - $k8sConnectArgs"
+
+    $errOut = $($retVal = & {az connectedk8s connect $k8sConnectArgs}) 2>&1
+    if ($LASTEXITCODE -ne 0)
+    {
+        throw "Arc Connection failed with error : $errOut"
+    }
+
+    Verify-ConnectedStatus -arcArgs $arcArgs -clusterName $ClusterName
+}
+
 Start-Transcript -Path C:\Temp\LogonScript.log
 
 # The federated token is short lived so convert it immediately to tokens with longer lifetime.
@@ -22,46 +112,6 @@ if ($msiUrl){
     Write-Host "MSI Local File Path: $msiLocalPath"
 }
 
-## Deploy AKS EE
-
-# Parameters
-$AksEdgeRemoteDeployVersion = "1.0.230221.1200"
-$schemaVersion = "1.1"
-$versionAksEdgeConfig = "1.0"
-$aksEdgeDeployModules = "main"
-$aksEEReleasesUrl = "https://api.github.com/repos/Azure/AKS-Edge/releases"
-
-# Requires -RunAsAdministrator
-
-New-Variable -Name AksEdgeRemoteDeployVersion -Value $AksEdgeRemoteDeployVersion -Option Constant -ErrorAction SilentlyContinue
-
-if (! [Environment]::Is64BitProcess) {
-    Write-Host "Error: Run this in 64bit Powershell session" -ForegroundColor Red
-    exit -1
-}
-
-if ($env:kubernetesDistribution -eq "k8s") {
-    $productName = "AKS Edge Essentials - K8s"
-    $networkplugin = "calico"
-} else {
-    $productName = "AKS Edge Essentials - K3s"
-    $networkplugin = "flannel"
-}
-
-$latestReleaseTag = "1.7.639.0" # (Invoke-WebRequest $aksEEReleasesUrl -UseBasicParsing | ConvertFrom-Json)[0].tag_name
-Write-Host "Fetching the AKS Edge Essentials release: $latestReleaseTag"
-
-$AKSEEReleaseDownloadUrl = "https://github.com/Azure/AKS-Edge/archive/refs/tags/$latestReleaseTag.zip"
-$output = Join-Path "C:\temp" "$latestReleaseTag.zip"
-Invoke-WebRequest $AKSEEReleaseDownloadUrl -OutFile $output -UseBasicParsing
-Expand-Archive $output -DestinationPath "C:\temp" -Force
-$AKSEEReleaseConfigFilePath = "C:\temp\AKS-Edge-$latestReleaseTag\tools\aksedge-config.json"
-$jsonContent = Get-Content -Raw -Path $AKSEEReleaseConfigFilePath | ConvertFrom-Json
-$schemaVersionAksEdgeConfig = $jsonContent.SchemaVersion
-# Clean up the downloaded release files
-Remove-Item -Path $output -Force
-Remove-Item -Path "C:\temp\AKS-Edge-$latestReleaseTag" -Force -Recurse
-
 # MSI avaliable locally ?
 if ( $msiUrl ){
     $productUrl = $msiLocalPath.replace('\','\\')
@@ -69,26 +119,84 @@ if ( $msiUrl ){
     $productUrl = "https://download.microsoft.com/download/9/d/b/9db70435-27fc-4feb-8792-04444d585526/AksEdge-K3s-1.28.3-1.7.639.0.msi"
 }
 Write-Host "Product Url: $productUrl"
+# ================================================================================================
+
+
+New-Variable -Name gAksEdgeQuickStartForAioVersion -Value "1.0.240815.1500" -Option Constant -ErrorAction SilentlyContinue
+
+# Specify only AIO supported regions
+New-Variable -Option Constant -ErrorAction SilentlyContinue -Name arcLocations -Value @(
+    "eastus", "eastus2", "northeurope", "westeurope", "westus", "westus2", "westus3"
+)
+
+if (! [Environment]::Is64BitProcess) {
+    Write-Host "Error: Run this in 64bit Powershell session" -ForegroundColor Red
+    exit -1
+}
+#Validate inputs
+if ($arcLocations -inotcontains $Location) {
+    Write-Host "Error: Location $Location is not supported for Azure Arc" -ForegroundColor Red
+    Write-Host "Supported Locations : $arcLocations"
+    exit -1
+}
+
+# Validate az cli version.
+try {
+    $azVersion = (az version)[1].Split(":")[1].Split('"')[1]
+    if ($azVersion -lt "2.38.0"){
+        Write-Host "Installed Azure CLI version $azVersion is older than 2.38.0. Please upgrade Azure CLI and retry." -ForegroundColor Red
+        exit -1
+    }
+}
+catch {
+    Write-Host "Please install Azure CLI version 2.38.0 or newer and retry." -ForegroundColor Red
+    exit -1
+}
+
+# Ensure logged into Azure
+$azureLogin = az account show
+if ( $null -eq $azureLogin){
+    Write-Host "Please login to azure via `az login` and retry." -ForegroundColor Red
+    exit -1
+}
+
+# Ensure `connectedk8s` az cli extension is installed and up to date.
+az extension add --upgrade --name connectedk8s -y
+
+$installDir = $((Get-Location).Path)
+$productName = "AKS Edge Essentials - K3s"
+$networkplugin = "flannel"
+if ($UseK8s) {
+    $productName ="AKS Edge Essentials - K8s"
+    $networkplugin = "calico"
+}
+
 # Here string for the json content
 $aideuserConfig = @"
 {
-    "SchemaVersion": "$AksEdgeRemoteDeployVersion",
-    "Version": "$schemaVersion",
+    "SchemaVersion": "1.1",
+    "Version": "1.0",
     "AksEdgeProduct": "$productName",
     "AksEdgeProductUrl": "$productUrl",
     "Azure": {
-        "SubscriptionId": "$env:arcSubscriptionId",
-        "TenantId": "$env:arcTenantId",
-        "ResourceGroupName": "$env:arcResourceGroup",
-        "Location": "$env:arcLocation"
+        "SubscriptionName": "",
+        "SubscriptionId": "$SubscriptionId",
+        "TenantId": "$TenantId",
+        "ResourceGroupName": "$ResourceGroupName",
+        "ServicePrincipalName": "aksedge-sp",
+        "Location": "$Location",
+        "CustomLocationOID":"$CustomLocationOid",
+        "Auth":{
+            "ServicePrincipalId":"",
+            "Password":""
+        }
     },
     "AksEdgeConfigFile": "aksedge-config.json"
 }
 "@
-
 $aksedgeConfig = @"
 {
-    "SchemaVersion": "1.9",
+    "SchemaVersion": "1.13",
     "Version": "1.0",
     "DeploymentType": "SingleMachineCluster",
     "Init": {
@@ -115,55 +223,62 @@ $aksedgeConfig = @"
 }
 "@
 
-Write-Host "aide-config:"
-Write-host "$aideuserConfig"
-
-Set-ExecutionPolicy Bypass -Scope Process -Force
-# Download the AksEdgeDeploy modules from Azure/AksEdge
-$url = "https://github.com/Azure/AKS-Edge/archive/$aksEdgeDeployModules.zip"
-$zipFile = "$aksEdgeDeployModules.zip"
-$installDir = "C:\AksEdgeScript"
-$workDir = "$installDir\AKS-Edge-main"
-
+###
+# Main
+###
 if (-not (Test-Path -Path $installDir)) {
     Write-Host "Creating $installDir..."
     New-Item -Path "$installDir" -ItemType Directory | Out-Null
 }
 
-Push-Location $installDir
+$starttime = Get-Date
+$starttimeString = $($starttime.ToString("yyMMdd-HHmm"))
+$transcriptFile = "$installDir\aksedgedlog-$starttimeString.txt"
 
-Write-Host "`n"
-Write-Host "About to silently install AKS Edge Essentials, this will take a few minutes." -ForegroundColor Green
-Write-Host "`n"
+Start-Transcript -Path $transcriptFile
 
-try {
-    function download2() { $ProgressPreference = "SilentlyContinue"; Invoke-WebRequest -UseBasicParsing -Uri $url -OutFile $installDir\$zipFile }
-    download2
+Set-ExecutionPolicy Bypass -Scope Process -Force
+# Download the AksEdgeDeploy modules from Azure/AksEdge
+$fork ="Azure"
+$branch="main"
+$url = "https://github.com/$fork/AKS-Edge/archive/$branch.zip"
+$zipFile = "AKS-Edge-$branch.zip"
+$workdir = "$installDir\AKS-Edge-$branch"
+if (-Not [string]::IsNullOrEmpty($Tag)) {
+    $url = "https://github.com/$fork/AKS-Edge/archive/refs/tags/$Tag.zip"
+    $zipFile = "$Tag.zip"
+    $workdir = "$installDir\AKS-Edge-$tag"
 }
-catch {
-    Write-Host "Error: Downloading Aide Powershell Modules failed" -ForegroundColor Red
-    Stop-Transcript | Out-Null
-    Pop-Location
-    exit -1
-}
+Write-Host "Step 1 : Azure/AKS-Edge repo setup" -ForegroundColor Cyan
 
-if (!(Test-Path -Path "$workDir")) {
+if (!(Test-Path -Path "$installDir\$zipFile")) {
+    try {
+        Invoke-WebRequest -Uri $url -OutFile $installDir\$zipFile
+    } catch {
+        Write-Host "Error: Downloading Aide Powershell Modules failed" -ForegroundColor Red
+        Stop-Transcript | Out-Null
+        Pop-Location
+        exit -1
+    }
+}
+if (!(Test-Path -Path "$workdir")) {
     Expand-Archive -Path $installDir\$zipFile -DestinationPath "$installDir" -Force
 }
 
-$aidejson = (Get-ChildItem -Path "$workDir" -Filter aide-userconfig.json -Recurse).FullName
+$aidejson = (Get-ChildItem -Path "$workdir" -Filter aide-userconfig.json -Recurse).FullName
 Set-Content -Path $aidejson -Value $aideuserConfig -Force
-$aksedgejson = (Get-ChildItem -Path "$workDir" -Filter aksedge-config.json -Recurse).FullName
+$aideuserConfigJson = $aideuserConfig | ConvertFrom-Json
+
+$aksedgejson = (Get-ChildItem -Path "$workdir" -Filter aksedge-config.json -Recurse).FullName
 Set-Content -Path $aksedgejson -Value $aksedgeConfig -Force
 
-$aksedgeShell = (Get-ChildItem -Path "$workDir" -Filter AksEdgeShell.ps1 -Recurse).FullName
+$aksedgeShell = (Get-ChildItem -Path "$workdir" -Filter AksEdgeShell.ps1 -Recurse).FullName
 . $aksedgeShell
 
 # Download, install and deploy AKS EE 
-Write-Host "Step 2: Download, install and deploy AKS Edge Essentials"
-# invoke the workflow, the json file already stored above.
+Write-Host "Step 2: Download, install and deploy AKS Edge Essentials" -ForegroundColor Cyan
+# invoke the workflow, the json file already updated above.
 $retval = Start-AideWorkflow -jsonFile $aidejson
-# report error via Write-Error for Intune to show proper status
 if ($retval) {
     Write-Host "Deployment Successful. "
 } else {
@@ -173,33 +288,80 @@ if ($retval) {
     exit -1
 }
 
-if ($env:windowsNode -eq $true) {
-    # Get a list of all nodes in the cluster
-    $nodes = kubectl get nodes -o json | ConvertFrom-Json
+Write-Host "Step 3: Connect the cluster to Azure" -ForegroundColor Cyan
+# Set the azure subscription
+$errOut = $($retVal = & {az account set -s $SubscriptionId}) 2>&1
+if ($LASTEXITCODE -ne 0)
+{
+    throw "Error setting Subscription ($SubscriptionId): $errOut"
+}
 
-    # Loop through each node and check the OSImage field
-    foreach ($node in $nodes.items) {
-        $os = $node.status.nodeInfo.osImage
-        if ($os -like '*windows*') {
-            # If the OSImage field contains "windows", assign the "worker" role
-            kubectl label nodes $node.metadata.name node-role.kubernetes.io/worker=worker
-        }
+# Create resource group
+$errOut = $($rgExists = & {az group show --resource-group $ResourceGroupName}) 2>&1
+if ($null -eq $rgExists) {
+    Write-Host "Creating resource group: $ResourceGroupName" -ForegroundColor Cyan
+    $errOut = $($retVal = & {az group create --location $Location --resource-group $ResourceGroupName --subscription $SubscriptionId}) 2>&1
+    if ($LASTEXITCODE -ne 0)
+    {
+        throw "Error creating ResourceGroup ($ResourceGroupName): $errOut"
+    }
+} 
+
+# Register the required resource providers 
+$resourceProviders = 
+@(
+    "Microsoft.ExtendedLocation",
+    "Microsoft.Kubernetes",
+    "Microsoft.KubernetesConfiguration"
+)
+foreach($rp in $resourceProviders)
+{
+    $errOut = $($obj = & {az provider show -n $rp | ConvertFrom-Json}) 2>&1
+    if ($LASTEXITCODE -ne 0)
+    {
+        throw "Error querying provider $rp : $errOut"
+    }
+
+    if ($obj.registrationState -eq "Registered")
+    {
+        continue
+    }
+
+    $errOut = $($retVal = & {az provider register -n $rp}) 2>&1
+    if ($LASTEXITCODE -ne 0)
+    {
+        throw "Error registering provider $rp : $errOut"
     }
 }
 
-Write-Host "`n"
-Write-Host "Checking kubernetes nodes"
-Write-Host "`n"
-kubectl get nodes -o wide | Write-Host
-Write-Host "`n"
+# Arc-enable the Kubernetes cluster
+Write-Host "Arc enable the kubernetes cluster $ClusterName" -ForegroundColor Cyan
+New-ConnectedCluster -clusterName $ClusterName -arcArgs $aideuserConfigJson.Azure -useK8s:$UseK8s
 
-Write-Host "Prep for AIO workload deployment" -ForegroundColor Cyan
+# Enable custom location support on your cluster using az connectedk8s enable-features command
+Write-Host "Associate Custom location with $ClusterName cluster"
+$objectId = $aideuserConfigJson.Azure.CustomLocationOID
+if ([string]::IsNullOrEmpty($objectId))
+{
+    $customLocationsAppId = "bc313c14-388c-4e7d-a58e-70017303ee3b"
+    $errOut = $($objectId = & {az ad sp show --id $customLocationsAppId --query id -o tsv}) 2>&1
+    if ($null -eq $objectId)
+    {
+        throw "Error querying ObjectId for CustomLocationsAppId : $errOut"
+    }
+}
+$errOut = $($retVal = & {az connectedk8s enable-features -n $ClusterName -g $ResourceGroupName --custom-locations-oid $objectId --features cluster-connect custom-locations}) 2>&1
+if ($LASTEXITCODE -ne 0)
+{
+    throw "Error enabling feature CustomLocations : $errOut"
+}
 
+Write-Host "Step 4: Prep for AIO workload deployment" -ForegroundColor Cyan
 Write-Host "Deploy local path provisioner"
 try {
     $localPathProvisionerYaml= (Get-ChildItem -Path "$workdir" -Filter local-path-storage.yaml -Recurse).FullName
-    kubectl apply -f $localPathProvisionerYaml | Write-Host
-    Write-Host "Successfully deployment the local path provisioner from $localPathProvisionerYaml"
+    & kubectl apply -f $localPathProvisionerYaml
+    Write-Host "Successfully deployment the local path provisioner"
 }
 catch {
     Write-Host "Error: local path provisioner deployment failed" -ForegroundColor Red
@@ -258,7 +420,21 @@ try {
     }
     else {
         Write-Host "iptable rule exists, skip configuring iptable rules..."
-    } 
+    }
+
+    # Add additional firewall rules
+    $dports = @(10124, 8420, 2379, 50051)
+    foreach($port in $dports)
+    {
+        $iptableRulesExist = Invoke-AksEdgeNodeCommand -NodeType "Linux" -command "sudo iptables-save | grep -- '-m tcp --dport $port -j ACCEPT'" -ignoreError
+        if ( $null -eq $iptableRulesExist ) {
+            Invoke-AksEdgeNodeCommand -NodeType "Linux" -command "sudo iptables -A INPUT -p tcp --dport $port -j ACCEPT"
+            Write-Host "Updated runtime iptable rules for port $port"
+        }
+        else {
+            Write-Host "iptable rule exists, skip configuring iptable rule for port $port..."
+        }
+    }
 }
 catch {
     Write-Host "Error: iptable rule update failed" -ForegroundColor Red
@@ -267,110 +443,9 @@ catch {
     exit -1 
 }
 
-# az version
-az -v
-
-# Set default subscription to run commands against
-# "subscriptionId" value comes from clientVM.json ARM template, based on which 
-# subscription user deployed ARM template to. This is needed in case Service 
-# Principal has access to multiple subscriptions, which can break the automation logic
-az account set --subscription $env:arcSubscriptionId *>&1
-
-Write-Host "Creating admin credentials"
-# Create admin service account and write token to key vault
-# The secret name must be a 1-127 character string, starting with a letter and containing only 0-9, a-z, A-Z, and -.
-kubectl apply -f https://raw.githubusercontent.com/prashantchari/public/main/arc-admin.yaml | Write-Host
-
-# wait for a token to be created
-Write-Host "Writing admin token to key vault secret"
-$uniqueSecretName = "$Env:clusterName-$Env:arcResourceGroup-$env:arcSubscriptionId"
-while ($true) {
-    $token = kubectl get secret arc-admin-secret -n kube-system -o jsonpath='{.data.token}' --ignore-not-found | %{[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($_))}
-    if ($token) {
-        Write-Host "Writing token to secret named: $uniqueSecretName in key vault $Env:proxyCredentialsKeyVaultName"
-        az keyvault secret set --vault-name $Env:proxyCredentialsKeyVaultName --name $uniqueSecretName --value $token *>&1
-        break
-    } else {
-        Write-Host "Waiting for token to be created..."
-        Start-Sleep -Seconds 5
-    }
-}
-
-# Installing Azure CLI extensions
-# Making extension install dynamic
-az config set extension.use_dynamic_install=yes_without_prompt
-Write-Host "`n"
-Write-Host "Installing Azure CLI extensions"
-az extension add --name connectedk8s
-az extension add --name k8s-extension
-Write-Host "`n"
-
-# Registering Azure Arc providers
-Write-Host "Registering Azure Arc providers, hold tight..."
-Write-Host "`n"
-az provider register --namespace Microsoft.Kubernetes --wait
-az provider register --namespace Microsoft.KubernetesConfiguration --wait
-az provider register --namespace Microsoft.ExtendedLocation --wait
-
-# Onboarding the cluster to Azure Arc
-Write-Host "Onboarding the AKS Edge Essentials cluster to Azure Arc..."
-Write-Host "`n"
-
-# https://github.com/Azure/azure-cli-extensions/issues/6637
-Invoke-WebRequest -Uri https://secure.globalsign.net/cacert/Root-R1.crt -OutFile c:\globalsignR1.crt
-Import-Certificate -FilePath c:\globalsignR1.crt -CertStoreLocation Cert:\LocalMachine\Root
-
-$timeout = 900
-$startTime = Get-Date
-$endTime = $startTime.AddSeconds($timeout)
-$arcEnabled = ' '
-
-if ($env:USE_ARC_PREVIEW_BUILD -eq "True") {
-    $response = Invoke-RestMethod -Method Post -Uri "https://eastus2euap.dp.kubernetesconfiguration.azure.com/azure-arc-k8sagents/GetLatestHelmPackagePath?api-version=2019-11-01-preview&releaseTrain=preview"
-    # Set the HELMREGISTRY environment variable globally
-    [Environment]::SetEnvironmentVariable('HELMREGISTRY', $response.repositoryPath, 'Machine')
-    
-    # Verify it's set correctly
-    $env:HELMREGISTRY = [Environment]::GetEnvironmentVariable('HELMREGISTRY', 'Machine')
-    Write-Host "HELMREGISTRY is set globally to: $env:HELMREGISTRY"     
-}
-
-while ((Get-Date) -lt $endTime -and $arcEnabled -ne 'Succeeded') {
-
-    if ($env:kubernetesDistribution -eq "k8s") {
-        az connectedk8s connect --name $Env:clusterName `
-        --resource-group $Env:arcResourceGroup `
-        --location $env:arcLocation `
-        --custom-locations-oid 51dfe1e8-70c6-4de5-a08e-e18aff23d815 `
-        --onboarding-timeout 1200 `
-        --distribution aks_edge_k8s | Write-Host
-    } else {
-        az connectedk8s connect --name $Env:clusterName `
-        --resource-group $Env:arcResourceGroup `
-        --location $env:arcLocation `
-        --custom-locations-oid 51dfe1e8-70c6-4de5-a08e-e18aff23d815 `
-        --onboarding-timeout 1200 `
-        --distribution aks_edge_k3s | Write-Host
-    }
-
-    $arcEnabled = az connectedk8s show --name $Env:clusterName --resource-group $Env:arcResourceGroup --query "provisioningState" --only-show-errors -o tsv 2> null
-    if ($arcEnabled -ne 'Succeeded') {
-        Write-Host "Writing arc enablement troubleshoot logs"
-        az connectedk8s troubleshoot  --name $Env:clusterName --resource-group $Env:arcResourceGroup
-    }
-    Start-Sleep -Seconds 30
-}
-
-if ($arcEnabled -eq 'Succeeded') {
-    Write-Host "Cluster is Arc-enabled"
-}
-else {
-    Write-Host "Timeout reached, cluster is not Arc-enabled"
-    exit 1
-}
-
-# enable features
-az connectedk8s enable-features --name $Env:clusterName --resource-group $Env:arcResourceGroup --features cluster-connect custom-locations --custom-locations-oid 51dfe1e8-70c6-4de5-a08e-e18aff23d815 | Write-Host
-
-Stop-Transcript
+$endtime = Get-Date
+$duration = ($endtime - $starttime)
+Write-Host "Duration: $($duration.Hours) hrs $($duration.Minutes) mins $($duration.Seconds) seconds"
+Stop-Transcript | Out-Null
+Pop-Location
 exit 0
