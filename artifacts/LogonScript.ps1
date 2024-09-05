@@ -10,7 +10,7 @@ $ResourceGroupName = $env:arcResourceGroup
 $ClusterName = $Env:clusterName
 $CustomLocationOid = "51dfe1e8-70c6-4de5-a08e-e18aff23d815"
 # TODO: shold we set Tag as constant?
-$Tag = "1.7.639.0"
+$Tag = "1.8.202.0"
 $UseK8s=$false
 
 #Requires -RunAsAdministrator
@@ -115,7 +115,7 @@ if ($msiUrl){
 if ( $msiUrl ){
     $productUrl = $msiLocalPath.replace('\','\\')
 }  else {
-    $productUrl = "https://download.microsoft.com/download/9/d/b/9db70435-27fc-4feb-8792-04444d585526/AksEdge-K3s-1.28.3-1.7.639.0.msi"
+    $productUrl = "https://download.microsoft.com/download/9/0/8/9089c6e0-bc8e-4318-b1e0-a045c29fc14d/AksEdge-K8s-1.29.4-1.8.202.0.msi"
 }
 Write-Host "Product Url: $productUrl"
 # ================================================================================================
