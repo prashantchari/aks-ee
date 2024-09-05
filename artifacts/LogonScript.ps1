@@ -277,7 +277,7 @@ $aksedgeShell = (Get-ChildItem -Path "$workdir" -Filter AksEdgeShell.ps1 -Recurs
 # Download, install and deploy AKS EE 
 Write-Host "Step 2: Download, install and deploy AKS Edge Essentials" -ForegroundColor Cyan
 # invoke the workflow, the json file already updated above.
-$retval = Start-AideWorkflow -jsonFile $aidejson
+$retval = Start-AideWorkflow -jsonFile $aidejson 2> $null
 if ($retval) {
     Write-Host "Deployment Successful. "
 } else {
