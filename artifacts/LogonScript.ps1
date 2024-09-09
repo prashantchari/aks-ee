@@ -295,17 +295,6 @@ if ($LASTEXITCODE -ne 0)
     throw "Error setting Subscription ($SubscriptionId): $errOut"
 }
 
-# # Create resource group
-# $errOut = $($rgExists = & {az group show --resource-group $ResourceGroupName}) 2>&1
-# if ($null -eq $rgExists) {
-#     Write-Host "Creating resource group: $ResourceGroupName" -ForegroundColor Cyan
-#     $errOut = $($retVal = & {az group create --location $Location --resource-group $ResourceGroupName --subscription $SubscriptionId}) 2>&1
-#     if ($LASTEXITCODE -ne 0)
-#     {
-#         throw "Error creating ResourceGroup ($ResourceGroupName): $errOut"
-#     }
-# } 
-
 # Register the required resource providers 
 $resourceProviders = 
 @(
