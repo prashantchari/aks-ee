@@ -59,7 +59,7 @@ param(
     [object] $arcArgs,
     [Parameter(Mandatory=$true)]
     [string] $clusterName,
-    [Switch] $useK8s=$false
+    [Switch] $useK8s=$false,
     # Optional parameter
     [string] $arcgwResourceId = $null
 )
@@ -107,7 +107,7 @@ function New-ArcGateway {
         [Parameter(Mandatory=$true)]
         [object] $arcArgs,
 
-        [string] $gatewayName = "arcgw"
+        [string] $gatewayName = "arcgw",
         [string] $location = "eastus2euap" 
     )
 
@@ -117,8 +117,8 @@ function New-ArcGateway {
     Write-Host "Installing Azure Arc extensions..."
     # Install the Arc agent and Arc gateway CLI extensions
     # TODO: Remove the whl files once arc agent and arc gw CLI extension are available in public preview
-    az extension add --allow-preview $true --upgrade --yes --source https://arcgwprodsa.blob.core.windows.net/public/connectedmachine-0.7.0-py3-none-any.whl --subscription $arcArgs.SubscriptionId
-    az extension add --allow-preview $true --upgrade --yes --source https://github.com/AzureArcForKubernetes/azure-cli-extensions/raw/connectedk8s/public/cli-extensions/connectedk8s-1.10.0-py2.py3-none-any.whl --subscription $arcArgs.SubscriptionId
+    az extension add --allow-preview $true --upgrade --yes --source https://arcgwprodsa.blob.core.windows.net/public/connectedmachine-0.7.0-py3-none-any.whl
+    az extension add --allow-preview $true --upgrade --yes --source https://github.com/AzureArcForKubernetes/azure-cli-extensions/raw/connectedk8s/public/cli-extensions/connectedk8s-1.10.0-py2.py3-none-any.whl
 
     Write-Host "Creating the Azure Arc Gateway..."
     # Create an Azure Arc Gateway
@@ -377,10 +377,10 @@ Invoke-WebRequest -Uri https://secure.globalsign.net/cacert/Root-R1.crt -OutFile
 Import-Certificate -FilePath c:\globalsignR1.crt -CertStoreLocation Cert:\LocalMachine\Root
 
 # Check if $EnableArcGateway is enabled (i.e., $true)
-if ($EnableArcGateway -eq $true) {
+if ($EnableArcGateway -eq "true") {
     Write-Host "Arc Gateway is enabled, creating the Arc Gateway resource."
     $arcgwResourceId = New-ArcGateway -arcArgs $aideuserConfigJson.Azure
-    New-ConnectedCluster -clusterName $ClusterName -arcArgs $aideuserConfigJson.Azure -arcgwResourceId $arcgwResourceId
+    New-ConnectedCluster -clusterName $ClusterName -arcArgs $aideuserConfigJson.Azure -useK8s:$UseK8s -arcgwResourceId $arcgwResourceId
 } else {
     New-ConnectedCluster -clusterName $ClusterName -arcArgs $aideuserConfigJson.Azure -useK8s:$UseK8s
 }
