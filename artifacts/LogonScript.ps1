@@ -369,7 +369,9 @@ foreach($rp in $resourceProviders)
         throw "Error registering provider $rp : $errOut"
     }
 }
-
+Write-Host "...............Yinan........................" -ForegroundColor Cyan
+Get-ChildItem Env:
+Write-Host "...............Yinan........................" -ForegroundColor Cyan
 # Arc-enable the Kubernetes cluster
 Write-Host "Arc enable the kubernetes cluster $ClusterName" -ForegroundColor Cyan
 # https://github.com/Azure/azure-cli-extensions/issues/6637
