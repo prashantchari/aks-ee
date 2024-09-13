@@ -11,7 +11,9 @@ param (
     [string]$windowsNode,
     [string]$kubernetesDistribution,
     [string]$uamiClientId,
-    [string]$proxyCredentialsKeyVaultName
+    [string]$proxyCredentialsKeyVaultName,
+    [string]$helmRegistry,
+    [string]$enableArcGateway
 )
 
 [System.Environment]::SetEnvironmentVariable('adminUsername', $adminUsername,[System.EnvironmentVariableTarget]::Machine)
@@ -26,6 +28,8 @@ param (
 [System.Environment]::SetEnvironmentVariable('kubernetesDistribution', $kubernetesDistribution,[System.EnvironmentVariableTarget]::Machine)
 [System.Environment]::SetEnvironmentVariable('windowsNode', $windowsNode,[System.EnvironmentVariableTarget]::Machine)
 [System.Environment]::SetEnvironmentVariable('proxyCredentialsKeyVaultName', $proxyCredentialsKeyVaultName,[System.EnvironmentVariableTarget]::Machine)
+[System.Environment]::SetEnvironmentVariable('HELMREGISTRY', $helmRegistry,[System.EnvironmentVariableTarget]::Machine)
+[System.Environment]::SetEnvironmentVariable('enableArcGateway', $enableArcGateway,[System.EnvironmentVariableTarget]::Machine)
 
 if ($uamiClientId){
     [System.Environment]::SetEnvironmentVariable('AZCOPY_AUTO_LOGIN_TYPE', "MSI",[System.EnvironmentVariableTarget]::Machine)
