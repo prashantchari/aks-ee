@@ -379,7 +379,7 @@ Import-Certificate -FilePath c:\globalsignR1.crt -CertStoreLocation Cert:\LocalM
 # Check if $EnableArcGateway is enabled (i.e., $true)
 if ($EnableArcGateway -eq "true") {
     Write-Host "Arc Gateway is enabled, creating the Arc Gateway resource."
-    $arcgwResourceId = New-ArcGateway -arcArgs $aideuserConfigJson.Azure
+    $arcgwResourceId = [string](New-ArcGateway -arcArgs $aideuserConfigJson.Azure)
     New-ConnectedCluster -clusterName $ClusterName -arcArgs $aideuserConfigJson.Azure -useK8s:$UseK8s -arcgwResourceId $arcgwResourceId
 } else {
     New-ConnectedCluster -clusterName $ClusterName -arcArgs $aideuserConfigJson.Azure -useK8s:$UseK8s
