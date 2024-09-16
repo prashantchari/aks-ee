@@ -13,6 +13,8 @@ $CustomLocationOid = "51dfe1e8-70c6-4de5-a08e-e18aff23d815"
 $Tag = "1.8.202.0"
 $UseK8s=$false
 
+$EnableArcGateway = $env:enableArcGateway
+
 #Requires -RunAsAdministrator
 
 function Verify-ConnectedStatus
@@ -57,7 +59,9 @@ param(
     [object] $arcArgs,
     [Parameter(Mandatory=$true)]
     [string] $clusterName,
-    [Switch] $useK8s=$false
+    [Switch] $useK8s=$false,
+    # Optional parameter
+    [string] $arcgwResourceId = $null
 )
 
     Write-Host "New-ConnectedCluster"
@@ -82,6 +86,11 @@ param(
     $k8sConnectArgs += @("--subscription", $arcArgs.SubscriptionId)
     $k8sConnectArgs += @("--tags", $tags)
 
+    if ($arcgwResourceId) {
+        $k8sConnectArgs += @("--gateway-resource-id", $arcgwResourceId)
+        $k8sConnectArgs += @("-l", "eastus2euap", "--disable-auto-upgrade")
+    }
+
     Write-Host "Connect cmd args - $k8sConnectArgs"
 
     $errOut = $($retVal = & {az connectedk8s connect $k8sConnectArgs}) 2>&1
@@ -91,6 +100,60 @@ param(
     }
 
     Verify-ConnectedStatus -arcArgs $arcArgs -clusterName $ClusterName
+}
+
+function New-ArcGateway {
+    param (
+        [Parameter(Mandatory=$true)]
+        [object] $arcArgs,
+
+        [string] $gatewayName = "arcgw",
+        [string] $location = "eastus2euap" 
+    )
+
+    Write-Host "Registering the GatewayPreview feature..."
+    # Register the feature for Azure Arc
+    $errOut = $($retVal = & {az feature registration create --namespace Microsoft.HybridCompute --name GatewayPreview --subscription $arcArgs.SubscriptionId}) 2>&1
+    if ($LASTEXITCODE -ne 0)
+    {
+        throw "Failed to register the GatewayPreview feature : $errOut"
+    }
+
+    Write-Host "Installing Azure Arc extensions..."
+    # Install the Arc agent and Arc gateway CLI extensions
+    # TODO: Remove the whl files once arc agent and arc gw CLI extension are available in public preview
+    $errOut = $($retVal = & {az extension add --allow-preview $true --upgrade --yes --source https://arcgwprodsa.blob.core.windows.net/public/connectedmachine-0.7.0-py3-none-any.whl}) 2>&1
+    if ($LASTEXITCODE -ne 0)
+    {
+        throw "Failed to install the Arc extension connectedmachine with error : $errOut"
+    }
+    $errOut = $($retVal = & {az extension add --allow-preview $true --upgrade --yes --source https://github.com/AzureArcForKubernetes/azure-cli-extensions/raw/connectedk8s/public/cli-extensions/connectedk8s-1.10.0-py2.py3-none-any.whl}) 2>&1
+    if ($LASTEXITCODE -ne 0)
+    {
+        throw "Failed to install the Arc extension connectedk8s with error : $errOut"
+    }
+
+    Write-Host "Creating the Azure Arc Gateway..."
+    # Create an Azure Arc Gateway
+    # TODO: Use --location ARC_REGION once arc gateway resource is available in non-canary regions
+    $errOut = $($retVal = & {az connectedmachine gateway create --name $gatewayName --resource-group $arcArgs.ResourceGroupName --location $location --gateway-type public --allowed-features '*' --subscription $arcArgs.SubscriptionId}) 2>&1
+    if ($LASTEXITCODE -ne 0)
+    {
+        throw "Failed to create the Arc Gateway with error : $errOut"
+    }
+
+    Write-Host "Retrieving Arc Gateway Resource ID..."
+    # Get the Arc Gateway Resource ID
+    $errOut = $($arcGwResourceId = & {az connectedmachine gateway show --name $gatewayName --resource-group $arcArgs.ResourceGroupName --query id -o tsv --subscription $arcArgs.SubscriptionId}) 2>&1
+    if ($LASTEXITCODE -ne 0)
+    {
+        throw "Failed to retrieve the Arc Gateway Resource ID with error : $errOut"
+    }
+    # Print the Arc Gateway Resource ID
+    Write-Host "Arc Gateway Resource ID: $arcGwResourceId"
+
+    # Return the Arc Gateway Resource ID in case the function needs to be used programmatically
+    return $arcGwResourceId
 }
 Start-Transcript -Path C:\Temp\LogonScript.log
 
@@ -321,13 +384,25 @@ foreach($rp in $resourceProviders)
         throw "Error registering provider $rp : $errOut"
     }
 }
+Write-Host "...............Get Env Variables........................" -ForegroundColor Cyan
+Get-ChildItem Env:
+Write-Host "........................................................" -ForegroundColor Cyan
 
 # Arc-enable the Kubernetes cluster
 Write-Host "Arc enable the kubernetes cluster $ClusterName" -ForegroundColor Cyan
 # https://github.com/Azure/azure-cli-extensions/issues/6637
 Invoke-WebRequest -Uri https://secure.globalsign.net/cacert/Root-R1.crt -OutFile c:\globalsignR1.crt
 Import-Certificate -FilePath c:\globalsignR1.crt -CertStoreLocation Cert:\LocalMachine\Root
-New-ConnectedCluster -clusterName $ClusterName -arcArgs $aideuserConfigJson.Azure -useK8s:$UseK8s
+
+# Check if $EnableArcGateway is enabled (i.e., $true)
+if ($EnableArcGateway -eq "true") {
+    Write-Host "Arc Gateway is enabled, creating the Arc Gateway resource."
+    $arcgwResourceId = New-ArcGateway -arcArgs $aideuserConfigJson.Azure
+    New-ConnectedCluster -clusterName $ClusterName -arcArgs $aideuserConfigJson.Azure -useK8s:$UseK8s -arcgwResourceId $arcgwResourceId
+} else {
+    New-ConnectedCluster -clusterName $ClusterName -arcArgs $aideuserConfigJson.Azure -useK8s:$UseK8s
+}
+
 
 # Enable custom location support on your cluster using az connectedk8s enable-features command
 Write-Host "Associate Custom location with $ClusterName cluster"
