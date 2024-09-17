@@ -87,8 +87,7 @@ param(
     $k8sConnectArgs += @("--tags", $tags)
 
     if ($arcgwResourceId) {
-        $k8sConnectArgs += @("--gateway-resource-id", $arcgwResourceId)
-        $k8sConnectArgs += @("-l", "eastus2euap", "--disable-auto-upgrade")
+        $k8sConnectArgs += @("--gateway-resource-id", $arcgwResourceId, "--disable-auto-upgrade")
     }
 
     Write-Host "Connect cmd args - $k8sConnectArgs"
@@ -107,8 +106,7 @@ function New-ArcGateway {
         [Parameter(Mandatory=$true)]
         [object] $arcArgs,
 
-        [string] $gatewayName = "arcgw",
-        [string] $location = "eastus2euap" 
+        [string] $gatewayName = "arcgw"
     )
 
     Write-Host "Registering the GatewayPreview feature..."
@@ -136,7 +134,7 @@ function New-ArcGateway {
     Write-Host "Creating the Azure Arc Gateway..."
     # Create an Azure Arc Gateway
     # TODO: Use --location ARC_REGION once arc gateway resource is available in non-canary regions
-    $errOut = $($retVal = & {az connectedmachine gateway create --name $gatewayName --resource-group $arcArgs.ResourceGroupName --location $location --gateway-type public --allowed-features '*' --subscription $arcArgs.SubscriptionId}) 2>&1
+    $errOut = $($retVal = & {az connectedmachine gateway create --name $gatewayName --resource-group $arcArgs.ResourceGroupName --location $arcArgs.Location --gateway-type public --allowed-features '*' --subscription $arcArgs.SubscriptionId}) 2>&1
     if ($LASTEXITCODE -ne 0)
     {
         throw "Failed to create the Arc Gateway with error : $errOut"
