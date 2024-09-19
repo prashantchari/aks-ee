@@ -121,7 +121,7 @@ Write-Host "Product Url: $productUrl"
 # ================================================================================================
 
 
-New-Variable -Name gAksEdgeQuickStartForAioVersion -Value "1.0.240815.1500" -Option Constant -ErrorAction SilentlyContinue
+New-Variable -Name gAksEdgeQuickStartForAioVersion -Value "1.0.240904.1500" -Option Constant -ErrorAction SilentlyContinue
 
 # Specify only AIO supported regions
 New-Variable -Option Constant -ErrorAction SilentlyContinue -Name arcLocations -Value @(
