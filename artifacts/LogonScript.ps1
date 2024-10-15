@@ -299,7 +299,7 @@ New-Variable -Name gAksEdgeQuickStartForAioVersion -Value "1.0.240904.1500" -Opt
 
 # Specify only AIO supported regions
 New-Variable -Option Constant -ErrorAction SilentlyContinue -Name arcLocations -Value @(
-    "eastus", "eastus2", "northeurope", "westeurope", "westus", "westus2", "westus3"
+    "eastus", "eastus2", "northeurope", "westeurope", "westus", "westus2", "westus3","eastus2euap", "centraluseuap"
 )
 
 if (! [Environment]::Is64BitProcess) {
@@ -400,7 +400,7 @@ $aksedgeConfig = @"
     "Machines": [
         {
             "LinuxNode": {
-                "CpuCount": 8,
+                "CpuCount": 4,
                 "MemoryInMB": 16384,
                 "DataSizeInGB": 40,
                 "LogSizeInGB": 4
