@@ -14,6 +14,7 @@ $Tag = "1.8.202.0"
 $UseK8s=$false
 
 $EnableArcGateway = $env:enableArcGateway
+$DisableArcAgentAutoUpgrade = if ($env:disableArcAgentAutoUpgrade) { $env:disableArcAgentAutoUpgrade } else { "true" }
 
 #Requires -RunAsAdministrator
 
@@ -154,7 +155,9 @@ param(
     $k8sConnectArgs += @("-l", $arcArgs.Location)
     $k8sConnectArgs += @("--subscription", $arcArgs.SubscriptionId)
     $k8sConnectArgs += @("--tags", $tags)
-    $k8sConnectArgs += @("--disable-auto-upgrade")
+    if ($DisableArcAgentAutoUpgrade -eq "true") {
+        $k8sConnectArgs += @("--disable-auto-upgrade")
+    }
     if ($null -ne $proxyArgs)
     {
         if (-Not [string]::IsNullOrEmpty($proxyArgs.Http))
