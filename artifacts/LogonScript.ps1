@@ -14,7 +14,7 @@ $Tag = "1.8.202.0"
 $UseK8s=$false
 
 $EnableArcGateway = $env:enableArcGateway
-$DisableArcAgentAutoUpgrade = if ($env:disableArcAgentAutoUpgrade) { $env:disableArcAgentAutoUpgrade } else { "false" }
+$DisableArcAgentAutoUpgrade = if ($env:disableArcAgentAutoUpgrade) { $env:disableArcAgentAutoUpgrade } else { "true" }
 
 #Requires -RunAsAdministrator
 
