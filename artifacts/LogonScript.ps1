@@ -12,6 +12,7 @@ $CustomLocationOid = "51dfe1e8-70c6-4de5-a08e-e18aff23d815"
 # TODO: shold we set Tag as constant?
 $Tag = "1.8.202.0"
 $UseK8s=$false
+$CpuCoreCount = if ($env:cpuCoreCount) { $env:cpuCoreCount } else { 8 }
 
 $EnableArcGateway = $env:enableArcGateway
 $DisableArcAgentAutoUpgrade = if ($env:disableArcAgentAutoUpgrade) { $env:disableArcAgentAutoUpgrade } else { "true" }
@@ -379,7 +380,7 @@ $aksedgeConfig = @"
     "Machines": [
         {
             "LinuxNode": {
-                "CpuCount": 8,
+                "CpuCount": "$CpuCoreCount",
                 "MemoryInMB": 16384,
                 "DataSizeInGB": 40,
                 "LogSizeInGB": 4

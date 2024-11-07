@@ -14,7 +14,8 @@ param (
     [string]$proxyCredentialsKeyVaultName,
     [string]$helmRegistry,
     [string]$enableArcGateway,
-    [string]$disableArcAgentAutoUpgrade
+    [string]$disableArcAgentAutoUpgrade,
+    [string]$cpuCoreCount
 )
 
 [System.Environment]::SetEnvironmentVariable('adminUsername', $adminUsername,[System.EnvironmentVariableTarget]::Machine)
@@ -31,6 +32,7 @@ param (
 [System.Environment]::SetEnvironmentVariable('proxyCredentialsKeyVaultName', $proxyCredentialsKeyVaultName,[System.EnvironmentVariableTarget]::Machine)
 [System.Environment]::SetEnvironmentVariable('enableArcGateway', $enableArcGateway,[System.EnvironmentVariableTarget]::Machine)
 [System.Environment]::SetEnvironmentVariable('disableArcAgentAutoUpgrade', $disableArcAgentAutoUpgrade,[System.EnvironmentVariableTarget]::Machine)
+[System.Environment]::SetEnvironmentVariable('cpuCoreCount', $cpuCoreCount,[System.EnvironmentVariableTarget]::Machine)
 
 if ($helmRegistry){
     [System.Environment]::SetEnvironmentVariable('HELMREGISTRY', $helmRegistry,[System.EnvironmentVariableTarget]::Machine)
