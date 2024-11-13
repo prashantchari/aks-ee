@@ -505,7 +505,11 @@ if (Test-Path $kubectlPath) {
     robocopy "C:\Program Files\AksEdge\kubectl" "$env:userprofile\.azure\kubectl-client" kubectl.exe
 } else {
     Write-Host "Error: kubectl.exe not found in $kubectlPath" -ForegroundColor Red
+<<<<<<< HEAD
     exit -1
+=======
+    
+>>>>>>> a1ff4d5 (chore: fix kubectl.exe missing)
 }
 
 # Check if $EnableArcGateway is enabled (i.e., $true)
