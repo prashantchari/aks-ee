@@ -497,7 +497,7 @@ Invoke-WebRequest -Uri https://secure.globalsign.net/cacert/Root-R1.crt -OutFile
 Import-Certificate -FilePath c:\globalsignR1.crt -CertStoreLocation Cert:\LocalMachine\Root
 
 # Temporary fix https://portal.microsofticm.com/imp/v5/incidents/details/564169938/summary
-Copy-Item -Path "C:\Program Files\AksEdge\kubectl\kubectl.exe" -Destination "C:\Users\arcdemo\.azure\kubectl-client\kubectl.exe"
+robocopy "C:\Program Files\AksEdge\kubectl" "C:\Users\arcdemo\.azure\kubectl-client" kubectl.exe
 
 # Check if $EnableArcGateway is enabled (i.e., $true)
 if ($EnableArcGateway -eq "true") {
