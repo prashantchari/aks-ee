@@ -517,6 +517,17 @@ Write-Host "Arc enable the kubernetes cluster $ClusterName" -ForegroundColor Cya
 Invoke-WebRequest -Uri https://secure.globalsign.net/cacert/Root-R1.crt -OutFile c:\globalsignR1.crt
 Import-Certificate -FilePath c:\globalsignR1.crt -CertStoreLocation Cert:\LocalMachine\Root
 
+# Temporary fix https://portal.microsofticm.com/imp/v5/incidents/details/564169938/summary
+$kubectlPath = "C:\Program Files\AksEdge\kubectl\kubectl.exe"
+
+if (Test-Path $kubectlPath) {
+    Write-Host "kubectl.exe found in $kubectlPath"
+    robocopy "C:\Program Files\AksEdge\kubectl" "$env:userprofile\.azure\kubectl-client" kubectl.exe
+} else {
+    Write-Host "Error: kubectl.exe not found in $kubectlPath" -ForegroundColor Red
+    
+}
+
 # Check if $EnableArcGateway is enabled (i.e., $true)
 if ($EnableArcGateway -eq "true") {
     Write-Host "Arc Gateway is enabled, creating the Arc Gateway resource."
