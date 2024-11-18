@@ -33,6 +33,7 @@ param (
 [System.Environment]::SetEnvironmentVariable('enableArcGateway', $enableArcGateway,[System.EnvironmentVariableTarget]::Machine)
 [System.Environment]::SetEnvironmentVariable('disableArcAgentAutoUpgrade', $disableArcAgentAutoUpgrade,[System.EnvironmentVariableTarget]::Machine)
 [System.Environment]::SetEnvironmentVariable('cpuCoreCount', $cpuCoreCount,[System.EnvironmentVariableTarget]::Machine)
+[System.Environment]::SetEnvironmentVariable('vmMemory', $vmMemory,[System.EnvironmentVariableTarget]::Machine)
 
 if ($helmRegistry){
     [System.Environment]::SetEnvironmentVariable('HELMREGISTRY', $helmRegistry,[System.EnvironmentVariableTarget]::Machine)

@@ -13,6 +13,7 @@ $CustomLocationOid = "51dfe1e8-70c6-4de5-a08e-e18aff23d815"
 $Tag = "1.8.202.0"
 $UseK8s=$false
 $CpuCoreCount = if ($env:cpuCoreCount) { $env:cpuCoreCount } else { 8 }
+$VMMemory = if ($env:vmMemory) { $env:vmMemory } else { 16384 }
 
 $EnableArcGateway = $env:enableArcGateway
 $DisableArcAgentAutoUpgrade = if ($env:disableArcAgentAutoUpgrade) { $env:disableArcAgentAutoUpgrade } else { "true" }
@@ -381,7 +382,7 @@ $aksedgeConfig = @"
         {
             "LinuxNode": {
                 "CpuCount": "$CpuCoreCount",
-                "MemoryInMB": 16384,
+                "MemoryInMB": $VMMemory,
                 "DataSizeInGB": 40,
                 "LogSizeInGB": 4
             }
@@ -505,11 +506,7 @@ if (Test-Path $kubectlPath) {
     robocopy "C:\Program Files\AksEdge\kubectl" "$env:userprofile\.azure\kubectl-client" kubectl.exe
 } else {
     Write-Host "Error: kubectl.exe not found in $kubectlPath" -ForegroundColor Red
-<<<<<<< HEAD
     exit -1
-=======
-    
->>>>>>> a1ff4d5 (chore: fix kubectl.exe missing)
 }
 
 # Check if $EnableArcGateway is enabled (i.e., $true)
