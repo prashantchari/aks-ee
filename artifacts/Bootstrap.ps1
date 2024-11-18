@@ -15,7 +15,8 @@ param (
     [string]$helmRegistry,
     [string]$enableArcGateway,
     [string]$disableArcAgentAutoUpgrade,
-    [string]$cpuCoreCount
+    [string]$cpuCoreCount,
+    [string]$vmMemory
 )
 
 [System.Environment]::SetEnvironmentVariable('adminUsername', $adminUsername,[System.EnvironmentVariableTarget]::Machine)

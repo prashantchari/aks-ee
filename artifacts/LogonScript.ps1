@@ -14,7 +14,6 @@ $Tag = "1.8.202.0"
 $UseK8s=$false
 $CpuCoreCount = if ($env:cpuCoreCount) { $env:cpuCoreCount } else { 8 }
 $VMMemory = if ($env:vmMemory) { $env:vmMemory } else { 16384 }
-
 $EnableArcGateway = $env:enableArcGateway
 $DisableArcAgentAutoUpgrade = if ($env:disableArcAgentAutoUpgrade) { $env:disableArcAgentAutoUpgrade } else { "true" }
 
