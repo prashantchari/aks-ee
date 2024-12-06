@@ -274,7 +274,7 @@ if ($msiUrl){
 if ( $msiUrl ){
     $productUrl = $msiLocalPath.replace('\','\\')
 }  else {
-    $productUrl = "https://download.microsoft.com/download/9/0/8/9089c6e0-bc8e-4318-b1e0-a045c29fc14d/AksEdge-K3s-1.29.6-1.8.202.0.msi"
+    $productUrl = "https://download.microsoft.com/download/0/7/d/07d52874-440d-4770-b104-50f517769961/Final%201.9%20Release%20-%20Full/AksEdge-K3s-1.29.6-1.9.262.0.msi"
 }
 Write-Host "Product Url: $productUrl"
 # ================================================================================================
