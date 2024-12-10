@@ -56,6 +56,7 @@ $ErrorActionPreference = "SilentlyContinue"
 
 # Downloading GitHub artifacts
 Invoke-WebRequest ($templateBaseUrl + "artifacts/LogonScript.ps1") -OutFile "C:\Temp\LogonScript.ps1"
+Invoke-WebRequest ("https://raw.githubusercontent.com/Azure/AKS-Edge/54064c1c0a3ed94fcaf4b24aa711d8182bf01131/tools/scripts/AksEdgeQuickStart/AksEdgeQuickStartForAio.ps1") -OutFile "C:\Temp\akseescript.ps1"
 Invoke-WebRequest "https://raw.githubusercontent.com/Azure/arc_jumpstart_docs/main/img/wallpaper/jumpstart_wallpaper_dark.png" -OutFile "C:\Temp\wallpaper.png"
 
 # Installing tools
