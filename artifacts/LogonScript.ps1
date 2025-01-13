@@ -158,11 +158,6 @@ param(
         }
     }
 
-    if ($arcArgs.EnableWorkloadIdentity)
-    {
-        $k8sConnectArgs += @("--enable-oidc-issuer", "--enable-workload-identity")
-    }
-
     if (-Not [string]::IsNullOrEmpty($arcArgs.GatewayResourceId))
     {
         $k8sConnectArgs += @("--gateway-resource-id", $arcArgs.GatewayResourceId)
