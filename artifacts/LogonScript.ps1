@@ -85,4 +85,7 @@ $aksedgeConfig = @"
 }
 "@
 
-.\AksEdgeQuickStartForAio.ps1 -aideUserConfigfile $aideuserConfig -aksedgeConfigFile $aksedgeConfig -Tag "aio-accept-config-file-input-02"
+az login --service-principal --username $Env:arcAppId --federated-token "$arcFederatedToken" --tenant $Env:arcTenantId
+
+# Run the command and wait for it to complete
+Start-Process -FilePath "powershell.exe" -ArgumentList "-NoProfile -Command `".\AksEdgeQuickStartForAio.ps1 -aideUserConfigfile $aideuserConfig -aksedgeConfigFile $aksedgeConfig -Tag 'aio-accept-config-file-input-02'`"" -Wait -NoNewWindow
