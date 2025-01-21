@@ -17,6 +17,18 @@ $VMMemory = if ($env:vmMemory) { $env:vmMemory } else { 16384 }
 $EnableArcGateway = $env:enableArcGateway
 $DisableArcAgentAutoUpgrade = if ($env:disableArcAgentAutoUpgrade) { $env:disableArcAgentAutoUpgrade } else { "true" }
 
+#Requires -RunAsAdministrator
+
+Start-Transcript -Path C:\Temp\LogonScript.log
+
+Write-Host "Starting the script execution..."
+
+# The federated token is short lived so convert it immediately to tokens with longer lifetime.
+# Convert federated token to ARM access token
+az login --service-principal --username $Env:arcAppId --federated-token "$arcFederatedToken" --tenant $Env:arcTenantId
+
+# Acquire a key vault scoped access token before the federated token expires
+az account get-access-token --scope https://vault.azure.net/.default --output none
 
 # download public script and config json tempaltes
 $scriptUrl = "https://raw.githubusercontent.com/jagadishmurugan/AKS-Edge/refs/heads/users/jagamu/accept-config-file-input/tools/scripts/AksEdgeQuickStart/AksEdgeQuickStartForAio.ps1"
@@ -84,8 +96,6 @@ $aksedgeConfig = @"
     ]
 }
 "@
-
-az login --service-principal --username $Env:arcAppId --federated-token "$arcFederatedToken" --tenant $Env:arcTenantId
 
 # Run the command and wait for it to complete
 try {
