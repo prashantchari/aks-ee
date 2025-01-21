@@ -88,4 +88,11 @@ $aksedgeConfig = @"
 az login --service-principal --username $Env:arcAppId --federated-token "$arcFederatedToken" --tenant $Env:arcTenantId
 
 # Run the command and wait for it to complete
-Start-Process -FilePath "powershell.exe" -ArgumentList "-NoProfile -Command `".\AksEdgeQuickStartForAio.ps1 -aideUserConfigfile $aideuserConfig -aksedgeConfigFile $aksedgeConfig -Tag 'aio-accept-config-file-input-02'`"" -Wait -NoNewWindow
+try {
+    $output = Invoke-Expression ".\AksEdgeQuickStartForAio.ps1 -aideUserConfigfile $aideuserConfig -aksedgeConfigFile $aksedgeConfig -Tag 'aio-accept-config-file-input-02'"
+    Write-Host "Command executed successfully!"
+    Write-Output $output
+} catch {
+    Write-Host "An error occurred:" -ForegroundColor Red
+    Write-Host $_.Exception.Message
+}
