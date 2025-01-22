@@ -36,70 +36,44 @@ $scriptPath = "AksEdgeQuickStartForAio.ps1"
 
 Invoke-WebRequest -Uri $scriptUrl -OutFile $scriptPath
 
-# update json config
-# Here string for the json content
-$aideuserConfig = @"
-{
-    "SchemaVersion": "1.1",
-    "Version": "1.0",
-    "AksEdgeProduct": "$productName",
-    "AksEdgeProductUrl": "$productUrl",
-    "Azure": {
-        "SubscriptionName": "",
-        "SubscriptionId": "$SubscriptionId",
-        "TenantId": "$TenantId",
-        "ResourceGroupName": "$ResourceGroupName",
-        "ServicePrincipalName": "aksedge-sp",
-        "Location": "$Location",
-        "CustomLocationOID":"$CustomLocationOid",
-        "EnableWorkloadIdentity": true,
-        "EnableKeyManagement": true,
-        "GatewayResourceId": "",
-        "Auth":{
-            "ServicePrincipalId":"",
-            "Password":""
-        }
-    },
-    "AksEdgeConfigFile": "aksedge-config.json"
-}
-"@
-$aksedgeConfig = @"
-{
-    "SchemaVersion": "1.14",
-    "Version": "1.0",
-    "DeploymentType": "SingleMachineCluster",
-    "Init": {
-        "ServiceIPRangeSize": 10
-    },
-    "Network": {
-        "NetworkPlugin": "$networkplugin",
-        "InternetDisabled": false,
-        "Proxy": {
-            "Http": null,
-            "Https": null,
-            "No": null
-        }
-    },
-    "User": {
-        "AcceptEula": true,
-        "AcceptOptionalTelemetry": true
-    },
-    "Machines": [
-        {
-            "LinuxNode": {
-                "CpuCount": "$CpuCoreCount",
-                "MemoryInMB": $VMMemory,
-                "DataSizeInGB": 40,
-                "LogSizeInGB": 4
-            }
-        }
-    ]
-}
-"@
+# download the aio-aide-userconfig.json file
+$userConfigUrl = "https://raw.githubusercontent.com/jagadishmurugan/AKS-Edge/refs/heads/users/jagamu/accept-config-file-input/tools/aio-aide-userconfig.json"
+$userConfigPath = "aio-aide-userconfig.json"
+
+Invoke-WebRequest -Uri $userConfigUrl -OutFile $userConfigPath
+
+# Read the content of the aio-aide-userconfig.json file
+$userConfigContent = Get-Content -Path $userConfigPath -Raw
+
+# Replace placeholders with actual values
+$userConfigContent = $userConfigContent -replace "<subscription-id>", $SubscriptionId
+$userConfigContent = $userConfigContent -replace "<tenant-id>", $TenantId
+$userConfigContent = $userConfigContent -replace "<resourcegroup-name>", $ResourceGroupName
+$userConfigContent = $userConfigContent -replace "<location>", $Location
+$userConfigContent = $userConfigContent -replace "<customlocation-oid>", $CustomLocationOid
+
+# Save the updated content back to the aio-aide-userconfig.json file
+Set-Content -Path $userConfigPath -Value $userConfigContent
+
+
+# download the aio-aksedge-config.json file
+$aksEdgeConfigUrl = "https://raw.githubusercontent.com/jagadishmurugan/AKS-Edge/refs/heads/users/jagamu/accept-config-file-input/tools/aio-aksedge-config.json"
+$aksEdgeConfigPath = "aio-aksedge-config.json"
+
+Invoke-WebRequest -Uri $aksEdgeConfigUrl -OutFile $aksEdgeConfigPath
+# Read the content of the aio-aksedge-config.json file
+$aksEdgeConfigContent = Get-Content -Path $aksEdgeConfigPath -Raw
+
+# Replace <cluster-name> with the value of $ClusterName
+$updatedAksEdgeConfigContent = $aksEdgeConfigContent -replace "<cluster-name>", $ClusterName
+
+# Save the updated content back to the aio-aksedge-config.json file
+Set-Content -Path $aksEdgeConfigPath -Value $updatedAksEdgeConfigContent
+
 
 # Run the command and wait for it to complete
 try {
-    $output = Invoke-Expression ".\AksEdgeQuickStartForAio.ps1 -aideUserConfigfile $aideuserConfig -aksedgeConfigFile $aksedgeConfig -Tag 'aio-accept-config-file-input-02'"
+    $output = Invoke-Expression ".\AksEdgeQuickStartForAio.ps1 -aideUserConfigfile .\aio-aide-userconfig.json -aksedgeConfigFile .\aio-aksedge-config.json -Tag 'aio-accept-config-file-input-02'"
     Write-Host "Command executed successfully!"
     Write-Output $output
 } catch {
