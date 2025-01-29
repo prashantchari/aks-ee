@@ -70,6 +70,8 @@ $updatedAksEdgeConfigContent = $aksEdgeConfigContent -replace "<cluster-name>", 
 # Save the updated content back to the aio-aksedge-config.json file
 Set-Content -Path $aksEdgeConfigPath -Value $updatedAksEdgeConfigContent
 
+Invoke-WebRequest -Uri https://secure.globalsign.net/cacert/Root-R1.crt -OutFile c:\globalsignR1.crt
+Import-Certificate -FilePath c:\globalsignR1.crt -CertStoreLocation Cert:\LocalMachine\Root
 
 # Run the command and wait for it to complete
 try {
