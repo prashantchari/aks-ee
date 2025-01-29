@@ -411,6 +411,7 @@ $branch="main"
 $url = "https://github.com/$fork/AKS-Edge/archive/$branch.zip"
 $zipFile = "AKS-Edge-$branch.zip"
 $workdir = "$installDir\AKS-Edge-$branch"
+$Tag = "ignore-no-arc-param-error-01"
 if (-Not [string]::IsNullOrEmpty($Tag)) {
     $url = "https://github.com/$fork/AKS-Edge/archive/refs/tags/$Tag.zip"
     $zipFile = "$Tag.zip"
