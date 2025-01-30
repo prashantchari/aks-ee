@@ -82,3 +82,25 @@ try {
     Write-Host "An error occurred:" -ForegroundColor Red
     Write-Host $_.Exception.Message
 }
+
+Write-Host "Creating admin credentials"
+az account set --subscription $env:arcSubscriptionId *>&1
+
+# Create admin service account and write token to key vault
+# The secret name must be a 1-127 character string, starting with a letter and containing only 0-9, a-z, A-Z, and -.
+kubectl apply -f https://raw.githubusercontent.com/prashantchari/public/main/arc-admin.yaml | Write-Host
+
+# wait for a token to be created
+Write-Host "Writing admin token to key vault secret"
+$uniqueSecretName = "$Env:clusterName-$Env:arcResourceGroup-$env:arcSubscriptionId"
+while ($true) {
+    $token = kubectl get secret arc-admin-secret -n kube-system -o jsonpath='{.data.token}' --ignore-not-found | %{[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($_))}
+    if ($token) {
+        Write-Host "Writing token to secret named: $uniqueSecretName in key vault $Env:proxyCredentialsKeyVaultName"
+        az keyvault secret set --vault-name $Env:proxyCredentialsKeyVaultName --name $uniqueSecretName --value $token *>&1
+        break
+    } else {
+        Write-Host "Waiting for token to be created..."
+        Start-Sleep -Seconds 5
+    }
+}
