@@ -31,26 +31,51 @@ az login --service-principal --username $Env:arcAppId --federated-token "$arcFed
 az account get-access-token --scope https://vault.azure.net/.default --output none
 
 # download public script and config json tempaltes
-$scriptUrl = "https://raw.githubusercontent.com/wuqiten/AKS-Edge/refs/heads/main/tools/scripts/AksEdgeQuickStart/AksEdgeQuickStartForAio.ps1"
+$scriptUrl = "https://raw.githubusercontent.com/jagadishmurugan/AKS-Edge/refs/heads/users/jagamu/accept-config-file-input/tools/scripts/AksEdgeQuickStart/AksEdgeQuickStartForAio.ps1"
 $scriptPath = "AksEdgeQuickStartForAio.ps1"
 
 Invoke-WebRequest -Uri $scriptUrl -OutFile $scriptPath
 
+# download the aio-aide-userconfig.json file
+$userConfigUrl = "https://raw.githubusercontent.com/jagadishmurugan/AKS-Edge/refs/heads/users/jagamu/accept-config-file-input/tools/aio-aide-userconfig.json"
+$userConfigPath = "aio-aide-userconfig.json"
+
+Invoke-WebRequest -Uri $userConfigUrl -OutFile $userConfigPath
+
+# Read the content of the aio-aide-userconfig.json file
+$userConfigContent = Get-Content -Path $userConfigPath -Raw
+
+# Replace placeholders with actual values
+$userConfigContent = $userConfigContent -replace "<subscription-id>", $SubscriptionId
+$userConfigContent = $userConfigContent -replace "<tenant-id>", $TenantId
+$userConfigContent = $userConfigContent -replace "<resourcegroup-name>", $ResourceGroupName
+$userConfigContent = $userConfigContent -replace "<location>", $Location
+$userConfigContent = $userConfigContent -replace "<customlocation-oid>", $CustomLocationOid
+
+# Save the updated content back to the aio-aide-userconfig.json file
+Set-Content -Path $userConfigPath -Value $userConfigContent
+
+
+# download the aio-aksedge-config.json file
+$aksEdgeConfigUrl = "https://raw.githubusercontent.com/jagadishmurugan/AKS-Edge/refs/heads/users/jagamu/accept-config-file-input/tools/aio-aksedge-config.json"
+$aksEdgeConfigPath = "aio-aksedge-config.json"
+
+Invoke-WebRequest -Uri $aksEdgeConfigUrl -OutFile $aksEdgeConfigPath
+# Read the content of the aio-aksedge-config.json file
+$aksEdgeConfigContent = Get-Content -Path $aksEdgeConfigPath -Raw
+
+# Replace <cluster-name> with the value of $ClusterName
+$updatedAksEdgeConfigContent = $aksEdgeConfigContent -replace "<cluster-name>", $ClusterName
+
+# Save the updated content back to the aio-aksedge-config.json file
+Set-Content -Path $aksEdgeConfigPath -Value $updatedAksEdgeConfigContent
 
 Invoke-WebRequest -Uri https://secure.globalsign.net/cacert/Root-R1.crt -OutFile c:\globalsignR1.crt
 Import-Certificate -FilePath c:\globalsignR1.crt -CertStoreLocation Cert:\LocalMachine\Root
 
 # Run the command and wait for it to complete
 try {
-    $output = & .\AksEdgeQuickStartForAio.ps1 `
-    -SubscriptionId $SubscriptionId `
-    -TenantId $TenantId `
-    -Location $Location `
-    -ResourceGroupName $ResourceGroupName `
-    -ClusterName $ClusterName `
-    -CustomLocationOid $CustomLocationOid `
-    -UseK8s $UseK8s `
-    -Tag $Tag
+    $output = Invoke-Expression ".\AksEdgeQuickStartForAio.ps1 -aideUserConfigfile .\aio-aide-userconfig.json -aksedgeConfigFile .\aio-aksedge-config.json -Tag 'aio-accept-config-file-input-04'"
     Write-Host "Command executed successfully!"
     Write-Output $output
 } catch {
