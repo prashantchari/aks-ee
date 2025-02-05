@@ -67,7 +67,6 @@ $aksEdgeConfigContent = Get-Content -Path $aksEdgeConfigPath -Raw
 
 # Replace <cluster-name> with the value of $ClusterName
 $updatedAksEdgeConfigContent = $aksEdgeConfigContent -replace "<cluster-name>", $ClusterName
-$updatedAksEdgeConfigContent = $updatedAksEdgeConfigContent -replace "10240", "16384"
 
 # Save the updated content back to the aio-aksedge-config.json file
 Set-Content -Path $aksEdgeConfigPath -Value $updatedAksEdgeConfigContent
