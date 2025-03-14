@@ -67,8 +67,8 @@ $aksEdgeConfigContent = Get-Content -Path $aksEdgeConfigPath -Raw
 # Replace <cluster-name> with the value of $ClusterName
 $aksEdgeConfigContent = $aksEdgeConfigContent -replace "<cluster-name>", $ClusterName
 # Replace placeholders with actual values
-$aksEdgeConfigContent = $aksEdgeConfigContent -replace '"CpuCount": 4', '"CpuCount": ' + $CpuCoreCount
-$aksEdgeConfigContent = $aksEdgeConfigContent -replace '"MemoryInMB": 10240', '"MemoryInMB": ' + $VMMemory
+$aksEdgeConfigContent = $aksEdgeConfigContent -replace '"CpuCount": 4', ('"CpuCount": ' + $CpuCoreCount)
+$aksEdgeConfigContent = $aksEdgeConfigContent -replace '"MemoryInMB": 10240', ('"MemoryInMB": ' + $VMMemory)
 
 # Save the updated content back to the aio-aksedge-config.json file
 Set-Content -Path $aksEdgeConfigPath -Value $aksEdgeConfigContent
