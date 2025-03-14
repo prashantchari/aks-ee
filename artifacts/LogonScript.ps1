@@ -60,25 +60,18 @@ Set-Content -Path $userConfigPath -Value $userConfigContent
 $aksEdgeConfigUrl = "https://raw.githubusercontent.com/Azure/AKS-Edge/d03e9228dd7a0fc4c291bf792bebf81fcc7f4bba/tools/aio-aksedge-config.json"
 $aksEdgeConfigPath = "aio-aksedge-config.json"
 
+Invoke-WebRequest -Uri $aksEdgeConfigUrl -OutFile $aksEdgeConfigPath
 # Read the content of the aio-aksedge-config.json file
 $aksEdgeConfigContent = Get-Content -Path $aksEdgeConfigPath -Raw
 
+# Replace <cluster-name> with the value of $ClusterName
+$aksEdgeConfigContent = $aksEdgeConfigContent -replace "<cluster-name>", $ClusterName
 # Replace placeholders with actual values
 $aksEdgeConfigContent = $aksEdgeConfigContent -replace '"CpuCount": 4', '"CpuCount": ' + $CpuCoreCount
 $aksEdgeConfigContent = $aksEdgeConfigContent -replace '"MemoryInMB": 10240', '"MemoryInMB": ' + $VMMemory
 
 # Save the updated content back to the aio-aksedge-config.json file
 Set-Content -Path $aksEdgeConfigPath -Value $aksEdgeConfigContent
-
-Invoke-WebRequest -Uri $aksEdgeConfigUrl -OutFile $aksEdgeConfigPath
-# Read the content of the aio-aksedge-config.json file
-$aksEdgeConfigContent = Get-Content -Path $aksEdgeConfigPath -Raw
-
-# Replace <cluster-name> with the value of $ClusterName
-$updatedAksEdgeConfigContent = $aksEdgeConfigContent -replace "<cluster-name>", $ClusterName
-
-# Save the updated content back to the aio-aksedge-config.json file
-Set-Content -Path $aksEdgeConfigPath -Value $updatedAksEdgeConfigContent
 
 Invoke-WebRequest -Uri https://secure.globalsign.net/cacert/Root-R1.crt -OutFile c:\globalsignR1.crt
 Import-Certificate -FilePath c:\globalsignR1.crt -CertStoreLocation Cert:\LocalMachine\Root
