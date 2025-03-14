@@ -60,6 +60,16 @@ Set-Content -Path $userConfigPath -Value $userConfigContent
 $aksEdgeConfigUrl = "https://raw.githubusercontent.com/Azure/AKS-Edge/d03e9228dd7a0fc4c291bf792bebf81fcc7f4bba/tools/aio-aksedge-config.json"
 $aksEdgeConfigPath = "aio-aksedge-config.json"
 
+# Read the content of the aio-aksedge-config.json file
+$aksEdgeConfigContent = Get-Content -Path $aksEdgeConfigPath -Raw
+
+# Replace placeholders with actual values
+$aksEdgeConfigContent = $aksEdgeConfigContent -replace '"CpuCount": 4', '"CpuCount": ' + $CpuCoreCount
+$aksEdgeConfigContent = $aksEdgeConfigContent -replace '"MemoryInMB": 10240', '"MemoryInMB": ' + $VMMemory
+
+# Save the updated content back to the aio-aksedge-config.json file
+Set-Content -Path $aksEdgeConfigPath -Value $aksEdgeConfigContent
+
 Invoke-WebRequest -Uri $aksEdgeConfigUrl -OutFile $aksEdgeConfigPath
 # Read the content of the aio-aksedge-config.json file
 $aksEdgeConfigContent = Get-Content -Path $aksEdgeConfigPath -Raw
