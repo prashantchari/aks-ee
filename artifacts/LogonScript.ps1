@@ -31,13 +31,13 @@ az login --service-principal --username $Env:arcAppId --federated-token "$arcFed
 az account get-access-token --scope https://vault.azure.net/.default --output none
 
 # download public script and config json tempaltes
-$scriptUrl = "https://raw.githubusercontent.com/jagadishmurugan/AKS-Edge/refs/heads/users/jagamu/accept-config-file-input/tools/scripts/AksEdgeQuickStart/AksEdgeQuickStartForAio.ps1"
+$scriptUrl = "https://raw.githubusercontent.com/jagadishmurugan/AKS-Edge/refs/heads/users/jagamu/pvt-accept-input-from-config-file/tools/scripts/AksEdgeQuickStart/AksEdgeQuickStartForAio.ps1"
 $scriptPath = "AksEdgeQuickStartForAio.ps1"
 
 Invoke-WebRequest -Uri $scriptUrl -OutFile $scriptPath
 
 # download the aio-aide-userconfig.json file
-$userConfigUrl = "https://raw.githubusercontent.com/jagadishmurugan/AKS-Edge/refs/heads/users/jagamu/accept-config-file-input/tools/aio-aide-userconfig.json"
+$userConfigUrl = "https://raw.githubusercontent.com/Azure/AKS-Edge/d03e9228dd7a0fc4c291bf792bebf81fcc7f4bba/tools/aio-aide-userconfig.json"
 $userConfigPath = "aio-aide-userconfig.json"
 
 Invoke-WebRequest -Uri $userConfigUrl -OutFile $userConfigPath
@@ -51,14 +51,13 @@ $userConfigContent = $userConfigContent -replace "<tenant-id>", $TenantId
 $userConfigContent = $userConfigContent -replace "<resourcegroup-name>", $ResourceGroupName
 $userConfigContent = $userConfigContent -replace "<location>", $Location
 $userConfigContent = $userConfigContent -replace "<customlocation-oid>", $CustomLocationOid
-$userConfigContent = $userConfigContent -replace "aksedge-config.json", "aio-aksedge-config.json"
 
 # Save the updated content back to the aio-aide-userconfig.json file
 Set-Content -Path $userConfigPath -Value $userConfigContent
 
 
 # download the aio-aksedge-config.json file
-$aksEdgeConfigUrl = "https://raw.githubusercontent.com/jagadishmurugan/AKS-Edge/refs/heads/users/jagamu/accept-config-file-input/tools/aio-aksedge-config.json"
+$aksEdgeConfigUrl = "https://raw.githubusercontent.com/Azure/AKS-Edge/d03e9228dd7a0fc4c291bf792bebf81fcc7f4bba/tools/aio-aksedge-config.json"
 $aksEdgeConfigPath = "aio-aksedge-config.json"
 
 Invoke-WebRequest -Uri $aksEdgeConfigUrl -OutFile $aksEdgeConfigPath
@@ -76,7 +75,7 @@ Import-Certificate -FilePath c:\globalsignR1.crt -CertStoreLocation Cert:\LocalM
 
 # Run the command and wait for it to complete
 try {
-    $output = Invoke-Expression ".\AksEdgeQuickStartForAio.ps1 -aideUserConfigfile .\aio-aide-userconfig.json -aksedgeConfigFile .\aio-aksedge-config.json -Tag 'aio-accept-config-file-input-05'"
+    $output = Invoke-Expression ".\AksEdgeQuickStartForAio.ps1 -aideUserConfigfile .\aio-aide-userconfig.json -aksedgeConfigFile .\aio-aksedge-config.json -Tag 'aio-0313-accept-input-from-config-file'"
     Write-Host "Command executed successfully!"
     Write-Output $output
 } catch {
