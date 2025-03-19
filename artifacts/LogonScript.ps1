@@ -31,13 +31,13 @@ az login --service-principal --username $Env:arcAppId --federated-token "$arcFed
 az account get-access-token --scope https://vault.azure.net/.default --output none
 
 # download public script and config json tempaltes
-$scriptUrl = "https://raw.githubusercontent.com/jagadishmurugan/AKS-Edge/refs/heads/users/jagamu/pvt-accept-input-from-config-file/tools/scripts/AksEdgeQuickStart/AksEdgeQuickStartForAio.ps1"
+$scriptUrl = "https://raw.githubusercontent.com/Azure/AKS-Edge/refs/heads/main/tools/scripts/AksEdgeQuickStart/AksEdgeQuickStartForAio.ps1"
 $scriptPath = "AksEdgeQuickStartForAio.ps1"
 
 Invoke-WebRequest -Uri $scriptUrl -OutFile $scriptPath
 
 # download the aio-aide-userconfig.json file
-$userConfigUrl = "https://raw.githubusercontent.com/Azure/AKS-Edge/d03e9228dd7a0fc4c291bf792bebf81fcc7f4bba/tools/aio-aide-userconfig.json"
+$userConfigUrl = "https://raw.githubusercontent.com/Azure/AKS-Edge/refs/heads/main/tools/aio-aide-userconfig.json"
 $userConfigPath = "aio-aide-userconfig.json"
 
 Invoke-WebRequest -Uri $userConfigUrl -OutFile $userConfigPath
@@ -57,7 +57,7 @@ Set-Content -Path $userConfigPath -Value $userConfigContent
 
 
 # download the aio-aksedge-config.json file
-$aksEdgeConfigUrl = "https://raw.githubusercontent.com/Azure/AKS-Edge/d03e9228dd7a0fc4c291bf792bebf81fcc7f4bba/tools/aio-aksedge-config.json"
+$aksEdgeConfigUrl = "https://raw.githubusercontent.com/Azure/AKS-Edge/refs/heads/main/tools/aio-aksedge-config.json"
 $aksEdgeConfigPath = "aio-aksedge-config.json"
 
 Invoke-WebRequest -Uri $aksEdgeConfigUrl -OutFile $aksEdgeConfigPath
