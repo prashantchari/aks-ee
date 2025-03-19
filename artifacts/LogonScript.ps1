@@ -78,7 +78,7 @@ Import-Certificate -FilePath c:\globalsignR1.crt -CertStoreLocation Cert:\LocalM
 
 # Run the command and wait for it to complete
 try {
-    $output = Invoke-Expression ".\AksEdgeQuickStartForAio.ps1 -aideUserConfigfile .\aio-aide-userconfig.json -aksedgeConfigFile .\aio-aksedge-config.json -Tag 'aio-0313-accept-input-from-config-file'"
+    $output = Invoke-Expression ".\AksEdgeQuickStartForAio.ps1 -aideUserConfigfile .\aio-aide-userconfig.json -aksedgeConfigFile .\aio-aksedge-config.json"
     Write-Host "Command executed successfully!"
     Write-Output $output
 } catch {
