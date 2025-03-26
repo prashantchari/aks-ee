@@ -34,6 +34,9 @@ az account get-access-token --scope https://vault.azure.net/.default --output no
 $scriptUrl = "https://raw.githubusercontent.com/Azure/AKS-Edge/refs/heads/main/tools/scripts/AksEdgeQuickStart/AksEdgeQuickStartForAio.ps1"
 $scriptPath = "AksEdgeQuickStartForAio.ps1"
 
+# Update the script file to include the additional region "eastus2euap"
+(Get-Content -Path $scriptPath) -replace '"eastus", "eastus2"', '"eastus", "eastus2", "eastus2euap"' | Set-Content -Path $scriptPath
+
 Invoke-WebRequest -Uri $scriptUrl -OutFile $scriptPath
 
 # download the aio-aide-userconfig.json file
@@ -96,7 +99,13 @@ kubectl apply -f https://raw.githubusercontent.com/prashantchari/public/main/arc
 # wait for a token to be created
 Write-Host "Writing admin token to key vault secret"
 $uniqueSecretName = "$Env:clusterName-$Env:arcResourceGroup-$env:arcSubscriptionId"
+$timeout = [DateTime]::UtcNow.AddMinutes(5)
 while ($true) {
+    if ([DateTime]::UtcNow -gt $timeout) {
+        Write-Host "Timeout exceeded waiting for token creation." -ForegroundColor Red
+        exit 1
+    }
+
     $token = kubectl get secret arc-admin-secret -n kube-system -o jsonpath='{.data.token}' --ignore-not-found | %{[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($_))}
     if ($token) {
         Write-Host "Writing token to secret named: $uniqueSecretName in key vault $Env:proxyCredentialsKeyVaultName"
