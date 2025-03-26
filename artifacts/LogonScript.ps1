@@ -34,10 +34,10 @@ az account get-access-token --scope https://vault.azure.net/.default --output no
 $scriptUrl = "https://raw.githubusercontent.com/Azure/AKS-Edge/refs/heads/main/tools/scripts/AksEdgeQuickStart/AksEdgeQuickStartForAio.ps1"
 $scriptPath = "AksEdgeQuickStartForAio.ps1"
 
+Invoke-WebRequest -Uri $scriptUrl -OutFile $scriptPath
+
 # Update the script file to include the additional region "eastus2euap"
 (Get-Content -Path $scriptPath) -replace '"eastus", "eastus2"', '"eastus", "eastus2", "eastus2euap"' | Set-Content -Path $scriptPath
-
-Invoke-WebRequest -Uri $scriptUrl -OutFile $scriptPath
 
 # download the aio-aide-userconfig.json file
 $userConfigUrl = "https://raw.githubusercontent.com/Azure/AKS-Edge/refs/heads/main/tools/aio-aide-userconfig.json"
